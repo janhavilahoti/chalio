@@ -83,13 +83,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Chalio turns your steps into play and rewards. Walk, play, earn, repeat." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Chalio — Walk • Play • Earn • Repeat" },
+      { name: "twitter:description", content: "Chalio turns your steps into play and rewards. Walk, play, earn, repeat." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4ee689dd-1ade-4b6b-a8ee-bf900b569db5/id-preview-eb3b3cf6--aaa70410-1ec8-491b-8d30-0c0153197e7e.lovable.app-1784319970081.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4ee689dd-1ade-4b6b-a8ee-bf900b569db5/id-preview-eb3b3cf6--aaa70410-1ec8-491b-8d30-0c0153197e7e.lovable.app-1784319970081.png" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
   shellComponent: RootShell,
