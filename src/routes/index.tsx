@@ -21,31 +21,25 @@ function SplashScreen() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="flex flex-col items-center animate-[fadeIn_600ms_ease-out]">
-        {/* Icon mark — ~18% of viewport width, with sensible min/max */}
+        {/* Icon mark — ~18% of viewport width */}
         <img
           src={chalioIcon.url}
           alt=""
           aria-hidden="true"
-          className="object-contain"
-          style={{ width: "clamp(96px, 18vw, 180px)", height: "auto" }}
+          className="h-auto object-contain"
+          style={{ width: "clamp(96px, 18vw, 180px)" }}
         />
 
-        {/* Wordmark — ~45% of viewport width. The source PNG has the tagline
-            baked into the bottom; we crop it off with a fixed aspect ratio +
-            object-cover / object-top so only the "chalio" letters show. */}
-        <div
-          className="mt-6 overflow-hidden"
-          style={{ width: "clamp(220px, 45vw, 460px)", aspectRatio: "1920 / 540" }}
-        >
-          <img
-            src={chalioWordmark.url}
-            alt="Chalio"
-            className="h-full w-full object-cover object-top"
-          />
-        </div>
+        {/* Wordmark — ~45% of viewport width, full image, uncropped */}
+        <img
+          src={chalioWordmark.url}
+          alt="Chalio"
+          className="mt-8 h-auto object-contain"
+          style={{ width: "clamp(240px, 45vw, 460px)" }}
+        />
 
         {/* Tagline with colored-dot separators */}
-        <p className="mt-5 flex items-center gap-2 text-sm font-semibold tracking-wide text-slate-700">
+        <p className="mt-8 flex items-center gap-2 text-sm font-semibold tracking-wide text-slate-700">
           <span>Walk</span>
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#EA4335]" aria-hidden="true" />
           <span>Play</span>
