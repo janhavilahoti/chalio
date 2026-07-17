@@ -9,12 +9,41 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PromoteRouteImport } from './routes/promote'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ConnectFitRouteImport } from './routes/connect-fit'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRewardsRouteImport } from './routes/_app.rewards'
+import { Route as AppMissionsRouteImport } from './routes/_app.missions'
+import { Route as AppLeaderboardRouteImport } from './routes/_app.leaderboard'
+import { Route as AppHomeRouteImport } from './routes/_app.home'
+import { Route as AppMissionsIndexRouteImport } from './routes/_app.missions.index'
+import { Route as AppMissionsIdRouteImport } from './routes/_app.missions.$id'
 
+const PromoteRoute = PromoteRouteImport.update({
+  id: '/promote',
+  path: '/promote',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConnectFitRoute = ConnectFitRouteImport.update({
+  id: '/connect-fit',
+  path: '/connect-fit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -22,40 +51,163 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRewardsRoute = AppRewardsRouteImport.update({
+  id: '/rewards',
+  path: '/rewards',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMissionsRoute = AppMissionsRouteImport.update({
+  id: '/missions',
+  path: '/missions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLeaderboardRoute = AppLeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHomeRoute = AppHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMissionsIndexRoute = AppMissionsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppMissionsRoute,
+} as any)
+const AppMissionsIdRoute = AppMissionsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppMissionsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/connect-fit': typeof ConnectFitRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/promote': typeof PromoteRoute
+  '/home': typeof AppHomeRoute
+  '/leaderboard': typeof AppLeaderboardRoute
+  '/missions': typeof AppMissionsRouteWithChildren
+  '/rewards': typeof AppRewardsRoute
+  '/missions/$id': typeof AppMissionsIdRoute
+  '/missions/': typeof AppMissionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/connect-fit': typeof ConnectFitRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/promote': typeof PromoteRoute
+  '/home': typeof AppHomeRoute
+  '/leaderboard': typeof AppLeaderboardRoute
+  '/rewards': typeof AppRewardsRoute
+  '/missions/$id': typeof AppMissionsIdRoute
+  '/missions': typeof AppMissionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/connect-fit': typeof ConnectFitRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/promote': typeof PromoteRoute
+  '/_app/home': typeof AppHomeRoute
+  '/_app/leaderboard': typeof AppLeaderboardRoute
+  '/_app/missions': typeof AppMissionsRouteWithChildren
+  '/_app/rewards': typeof AppRewardsRoute
+  '/_app/missions/$id': typeof AppMissionsIdRoute
+  '/_app/missions/': typeof AppMissionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login'
+  fullPaths:
+    | '/'
+    | '/connect-fit'
+    | '/login'
+    | '/profile'
+    | '/promote'
+    | '/home'
+    | '/leaderboard'
+    | '/missions'
+    | '/rewards'
+    | '/missions/$id'
+    | '/missions/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login'
-  id: '__root__' | '/' | '/login'
+  to:
+    | '/'
+    | '/connect-fit'
+    | '/login'
+    | '/profile'
+    | '/promote'
+    | '/home'
+    | '/leaderboard'
+    | '/rewards'
+    | '/missions/$id'
+    | '/missions'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/connect-fit'
+    | '/login'
+    | '/profile'
+    | '/promote'
+    | '/_app/home'
+    | '/_app/leaderboard'
+    | '/_app/missions'
+    | '/_app/rewards'
+    | '/_app/missions/$id'
+    | '/_app/missions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  ConnectFitRoute: typeof ConnectFitRoute
   LoginRoute: typeof LoginRoute
+  ProfileRoute: typeof ProfileRoute
+  PromoteRoute: typeof PromoteRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/promote': {
+      id: '/promote'
+      path: '/promote'
+      fullPath: '/promote'
+      preLoaderRoute: typeof PromoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/connect-fit': {
+      id: '/connect-fit'
+      path: '/connect-fit'
+      fullPath: '/connect-fit'
+      preLoaderRoute: typeof ConnectFitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -65,12 +217,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/rewards': {
+      id: '/_app/rewards'
+      path: '/rewards'
+      fullPath: '/rewards'
+      preLoaderRoute: typeof AppRewardsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/missions': {
+      id: '/_app/missions'
+      path: '/missions'
+      fullPath: '/missions'
+      preLoaderRoute: typeof AppMissionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/leaderboard': {
+      id: '/_app/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof AppLeaderboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/home': {
+      id: '/_app/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AppHomeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/missions/': {
+      id: '/_app/missions/'
+      path: '/'
+      fullPath: '/missions/'
+      preLoaderRoute: typeof AppMissionsIndexRouteImport
+      parentRoute: typeof AppMissionsRoute
+    }
+    '/_app/missions/$id': {
+      id: '/_app/missions/$id'
+      path: '/$id'
+      fullPath: '/missions/$id'
+      preLoaderRoute: typeof AppMissionsIdRouteImport
+      parentRoute: typeof AppMissionsRoute
+    }
   }
 }
 
+interface AppMissionsRouteChildren {
+  AppMissionsIdRoute: typeof AppMissionsIdRoute
+  AppMissionsIndexRoute: typeof AppMissionsIndexRoute
+}
+
+const AppMissionsRouteChildren: AppMissionsRouteChildren = {
+  AppMissionsIdRoute: AppMissionsIdRoute,
+  AppMissionsIndexRoute: AppMissionsIndexRoute,
+}
+
+const AppMissionsRouteWithChildren = AppMissionsRoute._addFileChildren(
+  AppMissionsRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppHomeRoute: typeof AppHomeRoute
+  AppLeaderboardRoute: typeof AppLeaderboardRoute
+  AppMissionsRoute: typeof AppMissionsRouteWithChildren
+  AppRewardsRoute: typeof AppRewardsRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppHomeRoute: AppHomeRoute,
+  AppLeaderboardRoute: AppLeaderboardRoute,
+  AppMissionsRoute: AppMissionsRouteWithChildren,
+  AppRewardsRoute: AppRewardsRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  ConnectFitRoute: ConnectFitRoute,
   LoginRoute: LoginRoute,
+  ProfileRoute: ProfileRoute,
+  PromoteRoute: PromoteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
