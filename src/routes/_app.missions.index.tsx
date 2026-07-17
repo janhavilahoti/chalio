@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Coin } from "@/components/chalio/Coin";
-import { joinMission, leaveMission, listMissions } from "@/lib/chalio.functions";
+import { joinMission, listMissions } from "@/lib/chalio.functions";
 
 export const Route = createFileRoute("/_app/missions/")({
   head: () => ({ meta: [{ title: "Missions — Chalio" }] }),
