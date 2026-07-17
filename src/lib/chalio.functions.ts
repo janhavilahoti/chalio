@@ -70,7 +70,7 @@ async function recomputeMissionProgress(supabase: any, userId: string) {
         reason: `mission:${m.id}`,
         metadata: { title: m.title },
       });
-      await supabase.rpc; // no-op placeholder
+      
       // increment coins on profile
       const { data: p } = await supabase.from("profiles").select("coins").eq("id", userId).single();
       await supabase.from("profiles").update({ coins: (p?.coins ?? 0) + m.reward_coins }).eq("id", userId);
