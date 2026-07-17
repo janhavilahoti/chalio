@@ -4,6 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+  --font-sans: "Nunito", ui-rounded, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-brand-red: #ea4335;
+  --color-brand-yellow: #fbbc04;
+  --color-brand-blue: #4285f4;
+  --color-brand-green: #34a853;
+}
+
 /*
  * Design system definition.
  *
