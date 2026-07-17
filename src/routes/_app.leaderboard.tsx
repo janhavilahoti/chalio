@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { Avatar } from "@/components/chalio/Avatar";
-import { leaderboard } from "@/lib/mock-data";
+import { getLeaderboard } from "@/lib/chalio.functions";
 
 export const Route = createFileRoute("/_app/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard — Chalio" }] }),
@@ -10,16 +11,20 @@ export const Route = createFileRoute("/_app/leaderboard")({
 });
 
 function LeaderboardScreen() {
-  const [scope, setScope] = useState<"city" | "challenge" | "friends">("city");
+  const [scope, setScope] = useState<"city" | "friends">("city");
   const [period, setPeriod] = useState<"week" | "month" | "all">("week");
+  const fn = useServerFn(getLeaderboard);
+
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["leaderboard", scope, period],
+    queryFn: () => fn({ data: { scope, period } }),
+  });
 
   return (
     <div className="flex flex-1 flex-col px-5 pb-6 pt-6">
       <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Leaderboard</h1>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Select label="Latur" />
-        <Select label="Central Latur" />
         <Segmented
           value={period}
           onChange={setPeriod}
@@ -35,38 +40,39 @@ function LeaderboardScreen() {
         <ScopeButton active={scope === "city"} onClick={() => setScope("city")}>
           City
         </ScopeButton>
-        <ScopeButton active={scope === "challenge"} onClick={() => setScope("challenge")}>
-          Challenge
-        </ScopeButton>
         <ScopeButton active={scope === "friends"} onClick={() => setScope("friends")}>
           Friends
         </ScopeButton>
       </div>
 
-      <ul className="mt-5 space-y-1.5">
-        {leaderboard.map((row) => (
-          <li
-            key={row.rank}
-            className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${
-              row.isYou ? "bg-brand-blue/5 ring-1 ring-brand-blue/30" : ""
-            }`}
-          >
-            <RankBadge rank={row.rank} />
-            <Avatar name={row.name} size={36} />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-semibold text-slate-800">
-                {row.name}
-                {row.isYou && (
-                  <span className="ml-2 text-xs font-bold text-brand-blue">You</span>
-                )}
-              </p>
-            </div>
-            <span className="text-sm font-bold tabular-nums text-slate-700">
-              {row.score.toLocaleString()}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {isLoading ? (
+        <p className="mt-6 text-sm text-slate-400">Loading…</p>
+      ) : rows.length === 0 ? (
+        <p className="mt-6 text-sm text-slate-400">No rankings yet — start walking to appear here.</p>
+      ) : (
+        <ul className="mt-5 space-y-1.5">
+          {rows.map((row: any) => (
+            <li
+              key={row.user_id}
+              className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${
+                row.isYou ? "bg-brand-blue/5 ring-1 ring-brand-blue/30" : ""
+              }`}
+            >
+              <RankBadge rank={row.rank} />
+              <Avatar name={row.name} size={36} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-semibold text-slate-800">
+                  {row.name}
+                  {row.isYou && <span className="ml-2 text-xs font-bold text-brand-blue">You</span>}
+                </p>
+              </div>
+              <span className="text-sm font-bold tabular-nums text-slate-700">
+                {Number(row.score).toLocaleString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -85,18 +91,6 @@ function RankBadge({ rank }: { rank: number }) {
     >
       {rank}
     </span>
-  );
-}
-
-function Select({ label }: { label: string }) {
-  return (
-    <button
-      type="button"
-      className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700"
-    >
-      {label}
-      <ChevronDown className="h-3.5 w-3.5" strokeWidth={2.4} />
-    </button>
   );
 }
 
