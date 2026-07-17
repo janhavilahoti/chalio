@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { BrandLockup } from "@/components/chalio/BrandLockup";
-import { Tagline } from "@/components/chalio/BrandLockup";
+import { BrandLockup, Tagline } from "@/components/chalio/BrandLockup";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   component: SplashScreen,
@@ -11,10 +11,19 @@ function SplashScreen() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      // TODO: check auth session and route to /home when authenticated.
-      navigate({ to: "/login" });
-    }, 1800);
+    const t = setTimeout(async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("fit_connected")
+          .eq("id", data.session.user.id)
+          .maybeSingle();
+        navigate({ to: profile?.fit_connected ? "/home" : "/connect-fit", replace: true });
+      } else {
+        navigate({ to: "/login", replace: true });
+      }
+    }, 1500);
     return () => clearTimeout(t);
   }, [navigate]);
 
@@ -24,7 +33,6 @@ function SplashScreen() {
         <BrandLockup size="lg" />
         <Tagline />
       </div>
-
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(4px); }

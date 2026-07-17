@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { submitBrandRequest } from "@/lib/chalio.functions";
+import { useRequireAuth } from "@/lib/auth-hooks";
 
 export const Route = createFileRoute("/promote")({
   head: () => ({ meta: [{ title: "Promote your brand — Chalio" }] }),
@@ -8,7 +12,32 @@ export const Route = createFileRoute("/promote")({
 });
 
 function PromoteScreen() {
+  useRequireAuth();
+  const submit = useServerFn(submitBrandRequest);
   const [submitted, setSubmitted] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setBusy(true);
+    try {
+      await submit({
+        data: {
+          business_name: String(form.get("name") ?? ""),
+          contact_info: String(form.get("email") ?? ""),
+          reward_offer_description: String(form.get("offer") ?? ""),
+          target_mission_type: String(form.get("type") ?? ""),
+        },
+      });
+      setSubmitted(true);
+      toast.success("Request submitted");
+    } catch (e) {
+      toast.error("Couldn't submit", { description: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-lg px-5 pb-10 pt-4">
@@ -35,13 +64,7 @@ function PromoteScreen() {
           </p>
         </div>
       ) : (
-        <form
-          className="mt-6 space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSubmitted(true);
-          }}
-        >
+        <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <Field label="Business name" name="name" required />
           <Field label="Contact email" name="email" type="email" required />
           <Field label="Reward offer" name="offer" placeholder="e.g. 15% off a coffee" required />
@@ -60,9 +83,10 @@ function PromoteScreen() {
           </label>
           <button
             type="submit"
-            className="w-full rounded-2xl bg-brand-blue px-5 py-3.5 text-base font-bold text-white transition-transform active:scale-[0.98]"
+            disabled={busy}
+            className="w-full rounded-2xl bg-brand-blue px-5 py-3.5 text-base font-bold text-white transition-transform active:scale-[0.98] disabled:opacity-60"
           >
-            Submit
+            {busy ? "Submitting…" : "Submit"}
           </button>
         </form>
       )}
@@ -85,9 +109,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-        {label}
-      </span>
+      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</span>
       <input
         name={name}
         type={type}
