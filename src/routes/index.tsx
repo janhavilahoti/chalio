@@ -1,24 +1,54 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import chalioIcon from "@/assets/chalio-icon.png.asset.json";
+import chalioWordmark from "@/assets/chalio-wordmark.png.asset.json";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: SplashScreen,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function SplashScreen() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      // TODO: check auth session and route to /home when authenticated.
+      navigate({ to: "/login" });
+    }, 1800);
+    return () => clearTimeout(t);
+  }, [navigate]);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="flex min-h-screen items-center justify-center bg-background px-6">
+      <div className="flex flex-col items-center gap-5 animate-[fadeIn_600ms_ease-out]">
+        <img
+          src={chalioIcon.url}
+          alt=""
+          aria-hidden="true"
+          className="h-28 w-28 object-contain"
+        />
+        <img
+          src={chalioWordmark.url}
+          alt="Chalio"
+          className="h-16 w-auto object-contain"
+        />
+        <p className="mt-1 flex items-center gap-2 text-sm font-medium tracking-wide text-slate-600">
+          <span>Walk</span>
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#EA4335]" aria-hidden="true" />
+          <span>Play</span>
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#FBBC04]" aria-hidden="true" />
+          <span>Earn</span>
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#34A853]" aria-hidden="true" />
+          <span>Repeat</span>
+        </p>
+      </div>
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </main>
   );
 }
