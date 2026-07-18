@@ -64,6 +64,52 @@ function HomeScreen() {
     onError: (e) => toast.error("Couldn't log steps", { description: (e as Error).message }),
   });
 
+  // Native: pull real totals from Health Connect and upsert absolute values.
+  const runHealthSync = useCallback(
+    async (opts: { silent?: boolean } = {}) => {
+      if (!native || syncingRef.current) return;
+      syncingRef.current = true;
+      try {
+        const totals = await readTodayTotals();
+        if (!totals) return;
+        const res = await syncHealth({
+          data: { steps: totals.steps, distance_km: totals.distanceKm, calories: totals.calories },
+        });
+        if (res.coinDelta > 0 && !opts.silent) toast.success(`+${res.coinDelta} coins`);
+        res.missionsCompleted?.forEach((m) =>
+          toast.success(`Mission complete: ${m.title}`, { description: `+${m.reward} coins` }),
+        );
+        await qc.invalidateQueries({ refetchType: "all" });
+      } catch (e) {
+        if (!opts.silent) toast.error("Couldn't sync activity", { description: (e as Error).message });
+      } finally {
+        syncingRef.current = false;
+      }
+    },
+    [native, syncHealth, qc],
+  );
+
+  // On mount + on app resume (native only), pull latest Health Connect totals.
+  useEffect(() => {
+    if (!native) return;
+    void runHealthSync({ silent: true });
+    let removeListener: (() => void) | undefined;
+    (async () => {
+      try {
+        const { App } = await import("@capacitor/app");
+        const handle = await App.addListener("appStateChange", (state) => {
+          if (state.isActive) void runHealthSync({ silent: true });
+        });
+        removeListener = () => handle.remove();
+      } catch (e) {
+        console.warn("[home] App resume listener failed", e);
+      }
+    })();
+    return () => {
+      removeListener?.();
+    };
+  }, [native, runHealthSync]);
+
   if (isError) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
