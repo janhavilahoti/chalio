@@ -140,7 +140,7 @@ function HomeScreen() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => refetch()}
+            onClick={() => (native ? runHealthSync() : refetch())}
             className="rounded-full p-1.5 text-slate-400"
             aria-label="Refresh"
           >
