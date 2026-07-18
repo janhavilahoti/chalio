@@ -60,6 +60,22 @@ function HomeScreen() {
     onError: (e) => toast.error("Couldn't log steps", { description: (e as Error).message }),
   });
 
+  if (isError) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="text-sm font-semibold text-slate-800">Couldn't load your dashboard</p>
+        <p className="text-xs text-slate-500">{(error as Error)?.message ?? "Unknown error"}</p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-white"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   if (isLoading || !data) {
     return <div className="flex flex-1 items-center justify-center text-sm text-slate-400">Loading…</div>;
   }
