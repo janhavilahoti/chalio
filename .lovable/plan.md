@@ -1,48 +1,41 @@
+## Goal
+
+Replace the two CDN-proxied Chalio images (`/__l5e/assets-v1/...`) with real binary files committed under `public/`, so the repo works when cloned locally. Update every reference (splash / login / home header via `BrandLockup`, plus favicon).
+
 ## Current state (verified)
 
-I queried `information_schema.tables` on the newly connected Supabase project and `public` returned **zero tables**. `src/integrations/supabase/types.ts` also shows an empty `Tables` map. So none of the previous schema carried over — everything must be recreated from scratch. The `supabase/config.toml` still points at the old project ref (`cqqhzmuhilpnjhcsixcp`), but the live connection is the new project (ref `xmstiriwubtoqwczbmod`) — that's where the migration will run.
+- CDN pointers exist at:
+  - `src/assets/chalio-icon.png.asset.json`
+  - `src/assets/chalio-wordmark.png.asset.json`
+- Only one component reads them: `src/components/chalio/BrandLockup.tsx` (imports both `.asset.json` files and uses `.url`). Splash (`src/routes/index.tsx`), Login, and Home header all render through `BrandLockup`, so a single component edit covers all three screens.
+- Favicon: `src/routes/__root.tsx` currently points to `/favicon.ico` (default Lovable icon in `public/favicon.ico`). Not yet branded.
 
-## Plan
+## Steps
 
-Run a single migration that recreates the full backend the app code in `src/lib/chalio.functions.ts` already expects. Schema and RLS mirror what we had before.
+1. **Download the two binaries from the CDN into `public/`** using `curl` against the current preview origin, saving as:
+   - `public/chalio-icon.png`
+   - `public/chalio-wordmark.png`
 
-### 1. Tables (public schema)
+   These files will be committed to git as real bytes (not pointers), so `git clone` works standalone.
 
-Each gets explicit GRANTs (authenticated + service_role; anon only where a policy allows it) and RLS enabled.
+2. **Rewrite `src/components/chalio/BrandLockup.tsx`** to drop the `.asset.json` imports and reference the public paths directly:
+   ```tsx
+   <img src="/chalio-icon.png" ... />
+   <img src="/chalio-wordmark.png" ... />
+   ```
 
-- **profiles** — `id uuid PK` (references `auth.users`), `name`, `city` (default `'Latur'`), `area`, `avatar_url`, `coins int default 0`, `current_streak int default 0`, `longest_streak int default 0`, `last_login_date date`, `previous_rank int`, `fit_connected bool default false`, `daily_goal int default 8000`, `created_at`, `updated_at`.
-- **settings** — `key text PK`, `value jsonb`. Read-only to authenticated.
-- **daily_activity** — `id`, `user_id`, `date`, `steps`, `distance_km`, `calories`, `active_minutes`, `coins_awarded`, timestamps. Unique on `(user_id, date)`.
-- **missions** — `id`, `title`, `description`, `target_type` (steps|distance_km|streak_days), `target_value numeric`, `reward_coins int`, `starts_at date`, `ends_at date`, `is_active bool`, `is_sponsored bool`, `sponsor_name`, `created_at`.
-- **user_missions** — `id`, `user_id`, `mission_id`, `progress numeric default 0`, `completed bool default false`, `completed_at`, `claimed bool default false`, `created_at`. Unique `(user_id, mission_id)`.
-- **coin_transactions** — `id`, `user_id`, `amount int`, `reason text`, `metadata jsonb`, `created_at`.
-- **badges** — `id`, `user_id`, `mission_id`, `title`, `color`, `earned_at`.
-- **reward_items** — `id`, `brand`, `label`, `coin_cost int`, `is_active bool default true`, `created_at`.
-- **brand_requests** — `id`, `user_id`, `business_name`, `contact_info`, `reward_offer_description`, `target_mission_type`, `created_at`.
+3. **Brand the favicon.** Replace the default `public/favicon.ico` reference in `src/routes/__root.tsx` with `/chalio-icon.png` (PNG favicon), and delete `public/favicon.ico` so no stale Lovable icon is served.
 
-### 2. RLS policies
+4. **Delete the now-unused CDN pointer files** so the repo doesn't carry dead references:
+   - `src/assets/chalio-icon.png.asset.json`
+   - `src/assets/chalio-wordmark.png.asset.json`
 
-- `profiles`: any authenticated user can SELECT (needed for leaderboard: name, city, avatar, coins). Users can INSERT/UPDATE only their own row.
-- `daily_activity`, `user_missions`, `coin_transactions`, `badges`, `brand_requests`: `auth.uid() = user_id` on all of SELECT/INSERT/UPDATE/DELETE. Server-fn writes run as the caller through `requireSupabaseAuth`, so this is sufficient.
-- `missions`, `reward_items`, `settings`: SELECT to authenticated (read-only catalog). No client writes.
-- No `anon` grants anywhere — the app is auth-gated.
+   (The CDN objects themselves are left alone — deleting them would break previously published deploys. They just stop being referenced.)
 
-### 3. Trigger — auto-create profile on signup
+5. **Verify:** confirm the build succeeds and visually check splash/login/home still show the icon + wordmark, and the browser tab shows the Chalio favicon.
 
-`handle_new_user()` (security definer, `search_path=public`) inserts a `profiles` row keyed to `NEW.id` with a name derived from `raw_user_meta_data->>'full_name'` or email. Attached as `AFTER INSERT ON auth.users`. EXECUTE revoked from `anon`/`authenticated`/`public`.
+## Notes / trade-offs
 
-### 4. Seed data (in the same migration)
-
-- `settings`: `steps_per_coin=100`, `daily_coin_cap=200`, `streak_bonuses={"3":10,"7":30,"14":75,"30":200}`.
-- `missions`: 6 starter missions (2 sponsored — Decathlon and a local café — 4 regular) covering `steps`, `distance_km`, and `streak_days` target types.
-- `reward_items`: 4 "coming soon" items with escalating `coin_cost`.
-
-### 5. After the migration
-
-Once approved and applied, Supabase regenerates `types.ts`. No app code changes are needed — `src/lib/chalio.functions.ts` and the route files already match this schema. I'll then run the Supabase linter and address any warnings tied to the new objects.
-
-### Technical notes
-
-- One migration, in order: CREATE TABLE → GRANT → ENABLE RLS → CREATE POLICY per table, then trigger, then seeds.
-- `handle_new_user` uses `SECURITY DEFINER` with revoked EXECUTE — same pattern as before; this is the safe approach for cross-schema inserts from `auth.users`.
-- I'll also update `supabase/config.toml` to the new `project_id` so local tooling matches.
+- This intentionally goes against Lovable's default (CDN-externalized binaries keep the repo lightweight). You're accepting slightly larger repo size in exchange for portability outside Lovable — which is exactly what you asked for.
+- Only the two logo files are un-externalized. Any future images you add will still default to the CDN unless you ask for the same treatment.
+- No backend, DB, or auth changes.
