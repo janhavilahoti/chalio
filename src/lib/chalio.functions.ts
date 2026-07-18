@@ -145,14 +145,14 @@ export const getBootstrap = createServerFn({ method: "GET" })
     const streakResult = await processDailyLogin(supabase, userId);
     const missionResult = await recomputeMissionProgress(supabase, userId);
 
-    const [{ data: profileRows }, { data: today }] = await Promise.all([
-      supabase.rpc("get_my_profile"),
+    const [{ data: profile }, { data: today }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("daily_activity").select("*").eq("user_id", userId).eq("date", todayISO()).maybeSingle(),
     ]);
-    const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
 
-    // rank in city
-    const { data: cityUsers } = await supabase
+    // rank in city — use admin client with explicit safe-column projection
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cityUsers } = await supabaseAdmin
       .from("profiles")
       .select("id, coins")
       .eq("city", profile?.city ?? "Latur")
@@ -299,10 +299,11 @@ export const getLeaderboard = createServerFn({ method: "GET" })
   .inputValidator((input: { scope: "city" | "challenge" | "friends"; period: "week" | "month" | "all"; missionId?: string }) => input)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: me } = await supabase.from("profiles").select("city, area").eq("id", userId).single();
 
     if (data.scope === "challenge" && data.missionId) {
-      const { data: ums } = await supabase
+      const { data: ums } = await supabaseAdmin
         .from("user_missions")
         .select("progress, user_id, profiles!inner(id, name, city, avatar_url)")
         .eq("mission_id", data.missionId)
@@ -319,8 +320,8 @@ export const getLeaderboard = createServerFn({ method: "GET" })
       }));
     }
 
-    // city / friends: rank by period score
-    let query = supabase.from("profiles").select("id, name, city, avatar_url, coins").eq("city", me?.city ?? "Latur");
+    // city / friends: rank by period score (cross-user reads via admin)
+    let query = supabaseAdmin.from("profiles").select("id, name, city, avatar_url, coins").eq("city", me?.city ?? "Latur");
 
     if (data.period === "all") {
       const { data: rows } = await query.order("coins", { ascending: false }).limit(50);
@@ -345,7 +346,7 @@ export const getLeaderboard = createServerFn({ method: "GET" })
     const ids = (cityProfiles ?? []).map((p: any) => p.id);
     if (!ids.length) return [];
 
-    const { data: activities } = await supabase
+    const { data: activities } = await supabaseAdmin
       .from("daily_activity")
       .select("user_id, steps")
       .in("user_id", ids)
@@ -388,12 +389,11 @@ export const getProfileStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const [{ data: profileRows }, { data: activity }, { data: badges }] = await Promise.all([
-      supabase.rpc("get_my_profile"),
+    const [{ data: profile }, { data: activity }, { data: badges }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("daily_activity").select("steps, distance_km").eq("user_id", userId),
       supabase.from("badges").select("*").eq("user_id", userId).order("earned_at", { ascending: false }),
     ]);
-    const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
     const totalSteps = (activity ?? []).reduce((s: number, a: any) => s + Number(a.steps ?? 0), 0);
     const totalKm = +(activity ?? []).reduce((s: number, a: any) => s + Number(a.distance_km ?? 0), 0).toFixed(1);
     const level = Math.max(1, Math.floor(totalSteps / 50000) + 1);
