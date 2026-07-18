@@ -331,7 +331,7 @@ export const getLeaderboard = createServerFn({ method: "GET" })
     since.setDate(since.getDate() - days);
     const sinceISO = since.toISOString().slice(0, 10);
 
-    const { data: activity, error: actErr } = await supabaseAdmin.rpc("get_city_activity", {
+    const { data: activity, error: actErr } = await supabase.rpc("get_city_activity", {
       target_city: city,
       since_date: sinceISO,
     });
