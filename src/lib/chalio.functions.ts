@@ -235,14 +235,12 @@ export const simulateActivity = createServerFn({ method: "POST" })
     }
 
     if (coinDelta > 0) {
-      await supabase.from("coin_transactions").insert({
-        user_id: userId,
-        amount: coinDelta,
-        reason: "steps",
-        metadata: { date: today, steps: newSteps },
+      await supabase.rpc("award_coins", {
+        _user: userId,
+        _amount: coinDelta,
+        _reason: "steps",
+        _metadata: { date: today, steps: newSteps },
       });
-      const { data: p } = await supabase.from("profiles").select("coins").eq("id", userId).single();
-      await supabase.from("profiles").update({ coins: (p?.coins ?? 0) + coinDelta }).eq("id", userId);
     }
 
     const missionResult = await recomputeMissionProgress(supabase, userId);
