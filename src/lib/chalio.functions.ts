@@ -670,7 +670,13 @@ export const updateProfile = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      name?: string;
+      city?: string | null;
+      area?: string | null;
+      avatar_url?: string | null;
+      daily_goal?: number;
+    } = {};
     if (typeof data.name === "string" && data.name.trim()) patch.name = data.name.trim();
     if (typeof data.city === "string") patch.city = data.city.trim() || null;
     if (typeof data.area === "string") patch.area = data.area.trim() || null;
