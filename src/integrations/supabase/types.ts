@@ -400,6 +400,23 @@ export type Database = {
       }
     }
     Functions: {
+      get_city_activity: {
+        Args: { since_date: string; target_city: string }
+        Returns: {
+          total_steps: number
+          user_id: string
+        }[]
+      }
+      get_city_leaderboard: {
+        Args: { target_city: string }
+        Returns: {
+          avatar_url: string
+          city: string
+          coins: number
+          id: string
+          name: string
+        }[]
+      }
       is_admin: { Args: { uid: string }; Returns: boolean }
     }
     Enums: {

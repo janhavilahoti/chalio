@@ -15,9 +15,10 @@ function LeaderboardScreen() {
   const [period, setPeriod] = useState<"week" | "month" | "all">("week");
   const fn = useServerFn(getLeaderboard);
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: rows = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ["leaderboard", scope, period],
     queryFn: () => fn({ data: { scope, period } }),
+    retry: 1,
   });
 
   return (
@@ -45,7 +46,19 @@ function LeaderboardScreen() {
         </ScopeButton>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <div className="mt-6 flex flex-col items-start gap-2">
+          <p className="text-sm font-semibold text-slate-800">Couldn't load the leaderboard</p>
+          <p className="text-xs text-slate-500">{(error as Error)?.message ?? "Unknown error"}</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="mt-1 rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-white"
+          >
+            Retry
+          </button>
+        </div>
+      ) : isLoading ? (
         <p className="mt-6 text-sm text-slate-400">Loading…</p>
       ) : rows.length === 0 ? (
         <p className="mt-6 text-sm text-slate-400">No rankings yet — start walking to appear here.</p>
