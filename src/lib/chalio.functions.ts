@@ -2,10 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // ---------- helpers ----------
-async function readSettings(_supabase: any) {
+async function readSettings(supabase: any) {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin.from("settings").select("key,value");
+    const { data } = await supabase.from("settings").select("key,value");
     const map: Record<string, any> = {};
     (data ?? []).forEach((r: any) => (map[r.key] = r.value));
     return {
@@ -14,7 +13,6 @@ async function readSettings(_supabase: any) {
       streakBonuses: (map.streak_bonuses ?? {}) as Record<string, number>,
     };
   } catch (e) {
-    // Fall back to safe defaults if service role isn't available at runtime.
     return { stepsPerCoin: 100, dailyCoinCap: 200, streakBonuses: {} as Record<string, number> };
   }
 }
