@@ -1,5 +1,5 @@
-import chalioIcon from "@/assets/chalio-icon.png.asset.json";
-import chalioWordmark from "@/assets/chalio-wordmark.png.asset.json";
+const CHALIO_ICON_SRC = "/chalio-icon.png";
+const CHALIO_WORDMARK_SRC = "/chalio-wordmark.png";
 
 export function BrandLockup({
   size = "md",
@@ -17,14 +17,14 @@ export function BrandLockup({
   return (
     <div className={`flex flex-col items-center ${dims.gap}`}>
       <img
-        src={chalioIcon.url}
+        src={CHALIO_ICON_SRC}
         alt=""
         aria-hidden="true"
         style={{ width: dims.icon }}
         className="h-auto object-contain"
       />
       <img
-        src={chalioWordmark.url}
+        src={CHALIO_WORDMARK_SRC}
         alt="Chalio"
         style={{ width: dims.wordmark }}
         className="h-auto object-contain"
@@ -51,7 +51,7 @@ export function Tagline() {
 export function IconMark({ size = 32 }: { size?: number }) {
   return (
     <img
-      src={chalioIcon.url}
+      src={CHALIO_ICON_SRC}
       alt="Chalio"
       style={{ width: size, height: size }}
       className="object-contain"
