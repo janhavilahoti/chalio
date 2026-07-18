@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      activities: {
+        Row: {
+          avg_speed_kmh: number
+          calories: number
+          coins_awarded: number
+          created_at: string
+          distance_km: number
+          duration_seconds: number
+          ended_at: string | null
+          id: string
+          path: Json
+          started_at: string
+          steps: number
+          user_id: string
+        }
+        Insert: {
+          avg_speed_kmh?: number
+          calories?: number
+          coins_awarded?: number
+          created_at?: string
+          distance_km?: number
+          duration_seconds?: number
+          ended_at?: string | null
+          id?: string
+          path?: Json
+          started_at?: string
+          steps?: number
+          user_id: string
+        }
+        Update: {
+          avg_speed_kmh?: number
+          calories?: number
+          coins_awarded?: number
+          created_at?: string
+          distance_km?: number
+          duration_seconds?: number
+          ended_at?: string | null
+          id?: string
+          path?: Json
+          started_at?: string
+          steps?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           color: string | null
