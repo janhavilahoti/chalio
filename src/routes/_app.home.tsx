@@ -19,8 +19,11 @@ export const Route = createFileRoute("/_app/home")({
 function HomeScreen() {
   const bootstrap = useServerFn(getBootstrap);
   const simulate = useServerFn(simulateActivity);
+  const syncHealth = useServerFn(syncHealthActivity);
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const native = isHealthPlatform();
+  const syncingRef = useRef(false);
   const toastedRef = useRef(false);
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
