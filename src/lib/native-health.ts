@@ -15,11 +15,22 @@ export function isHealthPlatform(): boolean {
   return isNativePlatform();
 }
 
-export async function checkHealthAvailability(): Promise<HealthAvailability> {
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race<T>([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
+export async function checkHealthAvailability(
+  timeoutMs = 4000,
+): Promise<HealthAvailability> {
   if (!isHealthPlatform()) return { available: false, reason: "not-native" };
   try {
     const Health = await loadHealth();
-    const res = await Health.isAvailable();
+    const res = await withTimeout(Health.isAvailable(), timeoutMs, "Health.isAvailable");
     return res.available
       ? { available: true }
       : { available: false, reason: res.reason };
@@ -28,14 +39,47 @@ export async function checkHealthAvailability(): Promise<HealthAvailability> {
   }
 }
 
-export async function requestHealthAuthorization(): Promise<boolean> {
+export async function requestHealthAuthorization(timeoutMs = 30000): Promise<boolean> {
   if (!isHealthPlatform()) return false;
   const Health = await loadHealth();
-  const status = await Health.requestAuthorization({
-    read: ["steps", "distance", "calories"],
-  });
-  // Consider it authorized if steps at minimum is granted
+  const status = await withTimeout(
+    Health.requestAuthorization({ read: ["steps", "distance", "calories"] }),
+    timeoutMs,
+    "Health.requestAuthorization",
+  );
   return status.readAuthorized?.includes("steps") ?? false;
+}
+
+/**
+ * Open the Health Connect listing in the Play Store. Tries the native
+ * `market://` intent first, then falls back to the https listing.
+ */
+export async function openHealthConnectPlayStore(): Promise<void> {
+  const pkg = "com.google.android.apps.healthdata";
+  const marketUrl = `market://details?id=${pkg}`;
+  const httpsUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
+  try {
+    if (isHealthPlatform()) {
+      const { App } = await import("@capacitor/app");
+      const res = await App.openUrl({ url: marketUrl });
+      if (!res?.completed) await App.openUrl({ url: httpsUrl });
+      return;
+    }
+  } catch (e) {
+    console.warn("[health] openHealthConnectPlayStore native open failed", e);
+    try {
+      const { App } = await import("@capacitor/app");
+      await App.openUrl({ url: httpsUrl });
+      return;
+    } catch (e2) {
+      console.warn("[health] https fallback failed", e2);
+    }
+  }
+  try {
+    window.open(httpsUrl, "_blank");
+  } catch (e) {
+    console.warn("[health] window.open failed", e);
+  }
 }
 
 /**
