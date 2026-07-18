@@ -156,9 +156,10 @@ export const getBootstrap = createServerFn({ method: "GET" })
       supabase.from("daily_activity").select("*").eq("user_id", userId).eq("date", todayISO()).maybeSingle(),
     ]);
 
-    // rank in city — use SECURITY DEFINER RPC (safe columns, authenticated-only)
+    // rank in city — SECURITY DEFINER RPC restricted to service_role
     const city = profile?.city ?? "Latur";
-    const { data: cityUsers, error: rankErr } = await supabase.rpc("get_city_leaderboard", { target_city: city });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cityUsers, error: rankErr } = await supabaseAdmin.rpc("get_city_leaderboard", { target_city: city });
     if (rankErr) console.error("[getBootstrap] get_city_leaderboard failed:", rankErr.message);
     const currentRank = (cityUsers ?? []).findIndex((u: any) => u.id === userId) + 1;
     const rankImproved =
