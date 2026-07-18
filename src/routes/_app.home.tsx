@@ -2,13 +2,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Footprints, Flame, Timer, Plus, RefreshCw } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { IconMark } from "@/components/chalio/BrandLockup";
 import { Avatar } from "@/components/chalio/Avatar";
 import { ProgressRing } from "@/components/chalio/ProgressRing";
 import { Coin } from "@/components/chalio/Coin";
-import { getBootstrap, simulateActivity } from "@/lib/chalio.functions";
+import { getBootstrap, simulateActivity, syncHealthActivity } from "@/lib/chalio.functions";
+import { isHealthPlatform, readTodayTotals } from "@/lib/native-health";
 
 export const Route = createFileRoute("/_app/home")({
   head: () => ({ meta: [{ title: "Home — Chalio" }] }),
@@ -18,8 +19,11 @@ export const Route = createFileRoute("/_app/home")({
 function HomeScreen() {
   const bootstrap = useServerFn(getBootstrap);
   const simulate = useServerFn(simulateActivity);
+  const syncHealth = useServerFn(syncHealthActivity);
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const native = isHealthPlatform();
+  const syncingRef = useRef(false);
   const toastedRef = useRef(false);
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
@@ -60,6 +64,52 @@ function HomeScreen() {
     onError: (e) => toast.error("Couldn't log steps", { description: (e as Error).message }),
   });
 
+  // Native: pull real totals from Health Connect and upsert absolute values.
+  const runHealthSync = useCallback(
+    async (opts: { silent?: boolean } = {}) => {
+      if (!native || syncingRef.current) return;
+      syncingRef.current = true;
+      try {
+        const totals = await readTodayTotals();
+        if (!totals) return;
+        const res = await syncHealth({
+          data: { steps: totals.steps, distance_km: totals.distanceKm, calories: totals.calories },
+        });
+        if (res.coinDelta > 0 && !opts.silent) toast.success(`+${res.coinDelta} coins`);
+        res.missionsCompleted?.forEach((m) =>
+          toast.success(`Mission complete: ${m.title}`, { description: `+${m.reward} coins` }),
+        );
+        await qc.invalidateQueries({ refetchType: "all" });
+      } catch (e) {
+        if (!opts.silent) toast.error("Couldn't sync activity", { description: (e as Error).message });
+      } finally {
+        syncingRef.current = false;
+      }
+    },
+    [native, syncHealth, qc],
+  );
+
+  // On mount + on app resume (native only), pull latest Health Connect totals.
+  useEffect(() => {
+    if (!native) return;
+    void runHealthSync({ silent: true });
+    let removeListener: (() => void) | undefined;
+    (async () => {
+      try {
+        const { App } = await import("@capacitor/app");
+        const handle = await App.addListener("appStateChange", (state) => {
+          if (state.isActive) void runHealthSync({ silent: true });
+        });
+        removeListener = () => handle.remove();
+      } catch (e) {
+        console.warn("[home] App resume listener failed", e);
+      }
+    })();
+    return () => {
+      removeListener?.();
+    };
+  }, [native, runHealthSync]);
+
   if (isError) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
@@ -90,7 +140,7 @@ function HomeScreen() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => refetch()}
+            onClick={() => (native ? runHealthSync() : refetch())}
             className="rounded-full p-1.5 text-slate-400"
             aria-label="Refresh"
           >
@@ -114,15 +164,26 @@ function HomeScreen() {
         <Stat Icon={Timer} color="text-brand-green" value={`${today.active_minutes ?? 0} min`} />
       </div>
 
-      <button
-        type="button"
-        disabled={sim.isPending}
-        onClick={() => sim.mutate(1000)}
-        className="mt-6 inline-flex items-center justify-center gap-2 self-center rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
-      >
-        <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
-        Log +1,000 steps (demo)
-      </button>
+      {native ? (
+        <button
+          type="button"
+          onClick={() => runHealthSync()}
+          className="mt-6 inline-flex items-center justify-center gap-2 self-center rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+        >
+          <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.6} />
+          Sync Health Connect
+        </button>
+      ) : (
+        <button
+          type="button"
+          disabled={sim.isPending}
+          onClick={() => sim.mutate(1000)}
+          className="mt-6 inline-flex items-center justify-center gap-2 self-center rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+        >
+          <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
+          Log +1,000 steps (demo)
+        </button>
+      )}
 
       <div className="mt-6 space-y-2.5">
         <RowLink
