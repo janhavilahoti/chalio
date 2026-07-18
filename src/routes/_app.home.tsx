@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Footprints, Flame, Timer, Plus, RefreshCw } from "lucide-react";
+import { ChevronRight, Footprints, Flame, Timer, Plus, RefreshCw, Play } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
@@ -184,6 +184,15 @@ function HomeScreen() {
           Log +1,000 steps (demo)
         </button>
       )}
+
+      <button
+        type="button"
+        onClick={() => navigate({ to: "/walk" })}
+        className="mt-4 inline-flex items-center justify-center gap-2 self-center rounded-full bg-brand-green px-6 py-3 text-sm font-extrabold text-white shadow-sm active:scale-[0.99]"
+      >
+        <Play className="h-4 w-4" strokeWidth={2.6} />
+        Start walk
+      </button>
 
       <div className="mt-6 space-y-2.5">
         <RowLink
