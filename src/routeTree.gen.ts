@@ -11,13 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalkRouteImport } from './routes/walk'
 import { Route as PromoteRouteImport } from './routes/promote'
-import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PermissionsRouteImport } from './routes/permissions'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ConnectFitRouteImport } from './routes/connect-fit'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProfileIndexRouteImport } from './routes/profile.index'
 import { Route as WalkIdRouteImport } from './routes/walk.$id'
 import { Route as ProfileEditRouteImport } from './routes/profile.edit'
 import { Route as AppRewardsRouteImport } from './routes/_app.rewards'
@@ -35,11 +35,6 @@ const WalkRoute = WalkRouteImport.update({
 const PromoteRoute = PromoteRouteImport.update({
   id: '/promote',
   path: '/promote',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -71,15 +66,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WalkIdRoute = WalkIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => WalkRoute,
 } as any)
 const ProfileEditRoute = ProfileEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => ProfileRoute,
+  id: '/profile/edit',
+  path: '/profile/edit',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppRewardsRoute = AppRewardsRouteImport.update({
   id: '/rewards',
@@ -118,7 +118,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/permissions': typeof PermissionsRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRouteWithChildren
   '/promote': typeof PromoteRoute
   '/walk': typeof WalkRouteWithChildren
   '/home': typeof AppHomeRoute
@@ -127,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/rewards': typeof AppRewardsRoute
   '/profile/edit': typeof ProfileEditRoute
   '/walk/$id': typeof WalkIdRoute
+  '/profile/': typeof ProfileIndexRoute
   '/missions/$id': typeof AppMissionsIdRoute
   '/missions/': typeof AppMissionsIndexRoute
 }
@@ -136,7 +136,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/permissions': typeof PermissionsRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRouteWithChildren
   '/promote': typeof PromoteRoute
   '/walk': typeof WalkRouteWithChildren
   '/home': typeof AppHomeRoute
@@ -144,6 +143,7 @@ export interface FileRoutesByTo {
   '/rewards': typeof AppRewardsRoute
   '/profile/edit': typeof ProfileEditRoute
   '/walk/$id': typeof WalkIdRoute
+  '/profile': typeof ProfileIndexRoute
   '/missions/$id': typeof AppMissionsIdRoute
   '/missions': typeof AppMissionsIndexRoute
 }
@@ -155,7 +155,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/permissions': typeof PermissionsRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRouteWithChildren
   '/promote': typeof PromoteRoute
   '/walk': typeof WalkRouteWithChildren
   '/_app/home': typeof AppHomeRoute
@@ -164,6 +163,7 @@ export interface FileRoutesById {
   '/_app/rewards': typeof AppRewardsRoute
   '/profile/edit': typeof ProfileEditRoute
   '/walk/$id': typeof WalkIdRoute
+  '/profile/': typeof ProfileIndexRoute
   '/_app/missions/$id': typeof AppMissionsIdRoute
   '/_app/missions/': typeof AppMissionsIndexRoute
 }
@@ -175,7 +175,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/permissions'
     | '/privacy'
-    | '/profile'
     | '/promote'
     | '/walk'
     | '/home'
@@ -184,6 +183,7 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/profile/edit'
     | '/walk/$id'
+    | '/profile/'
     | '/missions/$id'
     | '/missions/'
   fileRoutesByTo: FileRoutesByTo
@@ -193,7 +193,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/permissions'
     | '/privacy'
-    | '/profile'
     | '/promote'
     | '/walk'
     | '/home'
@@ -201,6 +200,7 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/profile/edit'
     | '/walk/$id'
+    | '/profile'
     | '/missions/$id'
     | '/missions'
   id:
@@ -211,7 +211,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/permissions'
     | '/privacy'
-    | '/profile'
     | '/promote'
     | '/walk'
     | '/_app/home'
@@ -220,6 +219,7 @@ export interface FileRouteTypes {
     | '/_app/rewards'
     | '/profile/edit'
     | '/walk/$id'
+    | '/profile/'
     | '/_app/missions/$id'
     | '/_app/missions/'
   fileRoutesById: FileRoutesById
@@ -231,9 +231,10 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PermissionsRoute: typeof PermissionsRoute
   PrivacyRoute: typeof PrivacyRoute
-  ProfileRoute: typeof ProfileRouteWithChildren
   PromoteRoute: typeof PromoteRoute
   WalkRoute: typeof WalkRouteWithChildren
+  ProfileEditRoute: typeof ProfileEditRoute
+  ProfileIndexRoute: typeof ProfileIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -250,13 +251,6 @@ declare module '@tanstack/react-router' {
       path: '/promote'
       fullPath: '/promote'
       preLoaderRoute: typeof PromoteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -301,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/walk/$id': {
       id: '/walk/$id'
       path: '/$id'
@@ -310,10 +311,10 @@ declare module '@tanstack/react-router' {
     }
     '/profile/edit': {
       id: '/profile/edit'
-      path: '/edit'
+      path: '/profile/edit'
       fullPath: '/profile/edit'
       preLoaderRoute: typeof ProfileEditRouteImport
-      parentRoute: typeof ProfileRoute
+      parentRoute: typeof rootRouteImport
     }
     '/_app/rewards': {
       id: '/_app/rewards'
@@ -390,17 +391,6 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
-interface ProfileRouteChildren {
-  ProfileEditRoute: typeof ProfileEditRoute
-}
-
-const ProfileRouteChildren: ProfileRouteChildren = {
-  ProfileEditRoute: ProfileEditRoute,
-}
-
-const ProfileRouteWithChildren =
-  ProfileRoute._addFileChildren(ProfileRouteChildren)
-
 interface WalkRouteChildren {
   WalkIdRoute: typeof WalkIdRoute
 }
@@ -418,9 +408,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PermissionsRoute: PermissionsRoute,
   PrivacyRoute: PrivacyRoute,
-  ProfileRoute: ProfileRouteWithChildren,
   PromoteRoute: PromoteRoute,
   WalkRoute: WalkRouteWithChildren,
+  ProfileEditRoute: ProfileEditRoute,
+  ProfileIndexRoute: ProfileIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

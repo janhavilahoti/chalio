@@ -178,7 +178,7 @@ function WalkScreen() {
 
   return (
     <main className="fixed inset-0 flex flex-col bg-slate-900">
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" style={{ zIndex: 0 }}>
         <LiveMap
           path={path.map((p) => ({ lat: p.lat, lng: p.lng }))}
           current={current ? { lat: current.lat, lng: current.lng } : null}
@@ -186,7 +186,11 @@ function WalkScreen() {
       </div>
 
       {/* Top bar */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-between p-4">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 flex justify-between p-4"
+        style={{ zIndex: 1000, paddingTop: "calc(1rem + env(safe-area-inset-top))" }}
+      >
+
         <button
           type="button"
           onClick={cancel}
@@ -203,7 +207,11 @@ function WalkScreen() {
       </div>
 
       {/* Bottom card */}
-      <div className="absolute inset-x-0 bottom-0 z-10 rounded-t-3xl bg-white p-5 shadow-[0_-8px_24px_rgba(0,0,0,0.12)]">
+      <div
+        className="absolute inset-x-0 bottom-0 rounded-t-3xl bg-white p-5 shadow-[0_-8px_24px_rgba(0,0,0,0.12)]"
+        style={{ zIndex: 1000, paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
+      >
+
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200" />
 
         {error && (
