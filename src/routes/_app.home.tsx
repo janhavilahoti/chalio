@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Footprints, Flame, Timer, Plus, RefreshCw } from "lucide-react";
+import { ChevronRight, Footprints, Flame, Timer, Plus, RefreshCw, Play } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
