@@ -38,6 +38,25 @@ export async function requestHealthAuthorization(): Promise<boolean> {
   return status.readAuthorized?.includes("steps") ?? false;
 }
 
+/**
+ * Check the CURRENT native authorization state (without prompting).
+ * Returns true only if the OS reports step-read access granted on this device.
+ * On web / non-native platforms this always returns false.
+ */
+export async function checkHealthAuthorized(): Promise<boolean> {
+  if (!isHealthPlatform()) return false;
+  try {
+    const Health = await loadHealth();
+    const status = await Health.checkAuthorization({
+      read: ["steps", "distance", "calories"],
+    });
+    return status.readAuthorized?.includes("steps") ?? false;
+  } catch (e) {
+    console.warn("[health] checkAuthorization failed", e);
+    return false;
+  }
+}
+
 export type TodayTotals = { steps: number; distanceKm: number; calories: number };
 
 export async function readTodayTotals(): Promise<TodayTotals | null> {
