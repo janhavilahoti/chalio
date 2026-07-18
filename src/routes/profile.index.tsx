@@ -29,6 +29,7 @@ import {
   checkHealthAuthorized,
   requestHealthAuthorization,
   checkHealthAvailability,
+  openHealthConnectPlayStore,
 } from "@/lib/native-health";
 
 const BADGE_COLORS = ["bg-brand-red", "bg-brand-yellow", "bg-brand-blue", "bg-brand-green"];
@@ -71,22 +72,34 @@ function ProfileScreen() {
   });
 
   const [connecting, setConnecting] = useState(false);
+  const [needsInstall, setNeedsInstall] = useState(false);
 
   async function handleConnect() {
     console.log("[profile] Connect tapped, native=", native);
     if (connecting) return;
+    if (needsInstall) {
+      console.log("[profile] opening Play Store for Health Connect");
+      await openHealthConnectPlayStore();
+      return;
+    }
     setConnecting(true);
     try {
       if (native) {
-        const avail = await checkHealthAvailability();
-        console.log("[profile] health availability", avail);
+        console.log("[profile] checking Health Connect availability (4s timeout)");
+        const avail = await checkHealthAvailability(4000);
+        console.log("[profile] health availability result", avail);
         if (!avail.available) {
-          toast.error("Health Connect not available", {
-            description: "Install Health Connect from the Play Store, then try again.",
+          setNeedsInstall(true);
+          toast.error("Health Connect not installed", {
+            description: "Tap Install to get it from the Play Store.",
           });
           return;
         }
-        const ok = await requestHealthAuthorization();
+        console.log("[profile] requesting authorization (30s timeout)");
+        const ok = await requestHealthAuthorization(30000).catch((e) => {
+          console.warn("[profile] requestAuthorization threw", e);
+          return false;
+        });
         console.log("[profile] auth granted?", ok);
         if (!ok) {
           toast.error("Permission denied");
@@ -97,6 +110,7 @@ function ProfileScreen() {
       await markFn({});
       toast.success("Connected");
       await qc.invalidateQueries({ refetchType: "all" });
+
     } catch (e) {
       console.error("[profile] connect failed", e);
       toast.error("Couldn't connect", { description: (e as Error).message });
@@ -198,7 +212,11 @@ function ProfileScreen() {
                 {native ? "Health Connect" : "Google Fit"}
               </p>
               <p className="text-[12px] font-semibold text-slate-500">
-                {isConnected ? "Connected" : "Not connected"}
+                {isConnected
+                  ? "Connected"
+                  : needsInstall
+                    ? "Not installed"
+                    : "Not connected"}
               </p>
             </div>
           </div>
@@ -222,8 +240,9 @@ function ProfileScreen() {
               disabled={connecting}
               className="rounded-full bg-brand-blue px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
             >
-              {connecting ? "Connecting…" : "Connect"}
+              {connecting ? "Connecting…" : needsInstall ? "Install" : "Connect"}
             </button>
+
 
           )}
         </div>
