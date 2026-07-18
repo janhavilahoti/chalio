@@ -50,12 +50,12 @@ function HomeScreen() {
 
   const sim = useMutation({
     mutationFn: (steps: number) => simulate({ data: { steps } }),
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       if (res.coinDelta > 0) toast.success(`+${res.coinDelta} coins`);
       res.missionsCompleted?.forEach((m) =>
         toast.success(`Mission complete: ${m.title}`, { description: `+${m.reward} coins` }),
       );
-      qc.invalidateQueries();
+      await qc.invalidateQueries({ refetchType: "all" });
     },
     onError: (e) => toast.error("Couldn't log steps", { description: (e as Error).message }),
   });
