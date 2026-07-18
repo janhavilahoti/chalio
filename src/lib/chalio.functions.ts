@@ -145,14 +145,14 @@ export const getBootstrap = createServerFn({ method: "GET" })
     const streakResult = await processDailyLogin(supabase, userId);
     const missionResult = await recomputeMissionProgress(supabase, userId);
 
-    const [{ data: profileRows }, { data: today }] = await Promise.all([
-      supabase.rpc("get_my_profile"),
+    const [{ data: profile }, { data: today }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("daily_activity").select("*").eq("user_id", userId).eq("date", todayISO()).maybeSingle(),
     ]);
-    const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
 
-    // rank in city
-    const { data: cityUsers } = await supabase
+    // rank in city — use admin client with explicit safe-column projection
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cityUsers } = await supabaseAdmin
       .from("profiles")
       .select("id, coins")
       .eq("city", profile?.city ?? "Latur")
