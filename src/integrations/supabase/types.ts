@@ -14,7 +14,319 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      badges: {
+        Row: {
+          color: string | null
+          earned_at: string
+          id: string
+          mission_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          earned_at?: string
+          id?: string
+          mission_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          earned_at?: string
+          id?: string
+          mission_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badges_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_requests: {
+        Row: {
+          business_name: string
+          contact_info: string
+          created_at: string
+          id: string
+          reward_offer_description: string
+          target_mission_type: string
+          user_id: string
+        }
+        Insert: {
+          business_name: string
+          contact_info: string
+          created_at?: string
+          id?: string
+          reward_offer_description: string
+          target_mission_type: string
+          user_id: string
+        }
+        Update: {
+          business_name?: string
+          contact_info?: string
+          created_at?: string
+          id?: string
+          reward_offer_description?: string
+          target_mission_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coin_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          metadata: Json | null
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reason: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_activity: {
+        Row: {
+          active_minutes: number
+          calories: number
+          coins_awarded: number
+          created_at: string
+          date: string
+          distance_km: number
+          id: string
+          steps: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_minutes?: number
+          calories?: number
+          coins_awarded?: number
+          created_at?: string
+          date: string
+          distance_km?: number
+          id?: string
+          steps?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_minutes?: number
+          calories?: number
+          coins_awarded?: number
+          created_at?: string
+          date?: string
+          distance_km?: number
+          id?: string
+          steps?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      missions: {
+        Row: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          is_sponsored: boolean
+          reward_coins: number
+          sponsor_name: string | null
+          starts_at: string | null
+          target_type: string
+          target_value: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_sponsored?: boolean
+          reward_coins?: number
+          sponsor_name?: string | null
+          starts_at?: string | null
+          target_type: string
+          target_value: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_sponsored?: boolean
+          reward_coins?: number
+          sponsor_name?: string | null
+          starts_at?: string | null
+          target_type?: string
+          target_value?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          area: string | null
+          avatar_url: string | null
+          city: string | null
+          coins: number
+          created_at: string
+          current_streak: number
+          daily_goal: number
+          fit_connected: boolean
+          id: string
+          last_login_date: string | null
+          longest_streak: number
+          name: string | null
+          previous_rank: number | null
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          coins?: number
+          created_at?: string
+          current_streak?: number
+          daily_goal?: number
+          fit_connected?: boolean
+          id: string
+          last_login_date?: string | null
+          longest_streak?: number
+          name?: string | null
+          previous_rank?: number | null
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          coins?: number
+          created_at?: string
+          current_streak?: number
+          daily_goal?: number
+          fit_connected?: boolean
+          id?: string
+          last_login_date?: string | null
+          longest_streak?: number
+          name?: string | null
+          previous_rank?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reward_items: {
+        Row: {
+          brand: string
+          coin_cost: number
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+        }
+        Insert: {
+          brand: string
+          coin_cost: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+        }
+        Update: {
+          brand?: string
+          coin_cost?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      user_missions: {
+        Row: {
+          claimed: boolean
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          mission_id: string
+          progress: number
+          user_id: string
+        }
+        Insert: {
+          claimed?: boolean
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_id: string
+          progress?: number
+          user_id: string
+        }
+        Update: {
+          claimed?: boolean
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_id?: string
+          progress?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
