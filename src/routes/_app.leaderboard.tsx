@@ -15,9 +15,10 @@ function LeaderboardScreen() {
   const [period, setPeriod] = useState<"week" | "month" | "all">("week");
   const fn = useServerFn(getLeaderboard);
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: rows = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ["leaderboard", scope, period],
     queryFn: () => fn({ data: { scope, period } }),
+    retry: 1,
   });
 
   return (
