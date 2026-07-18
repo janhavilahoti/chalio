@@ -329,39 +329,34 @@ export type Database = {
       }
     }
     Views: {
-      leaderboard_profiles: {
-        Row: {
+      [_ in never]: never
+    }
+    Functions: {
+      get_my_profile: {
+        Args: never
+        Returns: {
           area: string | null
           avatar_url: string | null
           city: string | null
-          coins: number | null
-          current_streak: number | null
-          id: string | null
+          coins: number
+          created_at: string
+          current_streak: number
+          daily_goal: number
+          fit_connected: boolean
+          id: string
+          last_login_date: string | null
+          longest_streak: number
           name: string | null
+          previous_rank: number | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
         }
-        Insert: {
-          area?: string | null
-          avatar_url?: string | null
-          city?: string | null
-          coins?: number | null
-          current_streak?: number | null
-          id?: string | null
-          name?: string | null
-        }
-        Update: {
-          area?: string | null
-          avatar_url?: string | null
-          city?: string | null
-          coins?: number | null
-          current_streak?: number | null
-          id?: string | null
-          name?: string | null
-        }
-        Relationships: []
       }
-    }
-    Functions: {
-      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

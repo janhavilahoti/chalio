@@ -145,10 +145,11 @@ export const getBootstrap = createServerFn({ method: "GET" })
     const streakResult = await processDailyLogin(supabase, userId);
     const missionResult = await recomputeMissionProgress(supabase, userId);
 
-    const [{ data: profile }, { data: today }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", userId).single(),
+    const [{ data: profileRows }, { data: today }] = await Promise.all([
+      supabase.rpc("get_my_profile"),
       supabase.from("daily_activity").select("*").eq("user_id", userId).eq("date", todayISO()).maybeSingle(),
     ]);
+    const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
 
     // rank in city
     const { data: cityUsers } = await supabase
