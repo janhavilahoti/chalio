@@ -293,10 +293,11 @@ function ProfileScreen() {
       <section className="mt-6">
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Settings</h2>
         <ul className="mt-2 divide-y divide-slate-100 rounded-2xl bg-white ring-1 ring-slate-100">
-          <SettingRow Icon={Bell} label="Notifications" trailing={<Toggle />} />
+          <NotificationsRow />
           <SettingRow Icon={LogOut} label="Sign out" danger onClick={signOut} />
         </ul>
       </section>
+
     </main>
   );
 }
