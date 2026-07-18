@@ -304,9 +304,8 @@ export const getLeaderboard = createServerFn({ method: "GET" })
     if (meErr) throw new Error(`Failed to load your profile: ${meErr.message}`);
     const city = me?.city ?? "Latur";
 
-    // Fetch all city profiles via SECURITY DEFINER RPC (service-role only, safe columns).
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: cityProfiles, error: lbErr } = await supabaseAdmin.rpc("get_city_leaderboard", { target_city: city });
+    // Fetch all city profiles via SECURITY DEFINER RPC (authenticated-callable, returns safe columns only).
+    const { data: cityProfiles, error: lbErr } = await supabase.rpc("get_city_leaderboard", { target_city: city });
     if (lbErr) throw new Error(`Failed to load leaderboard: ${lbErr.message}`);
     const profiles = (cityProfiles ?? []) as Array<{ id: string; name: string; city: string; avatar_url: string | null; coins: number }>;
 
