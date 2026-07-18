@@ -302,66 +302,49 @@ export const getLeaderboard = createServerFn({ method: "GET" })
   .inputValidator((input: { scope: "city" | "challenge" | "friends"; period: "week" | "month" | "all"; missionId?: string }) => input)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: me } = await supabase.from("profiles").select("city, area").eq("id", userId).single();
+    const { data: me, error: meErr } = await supabase.from("profiles").select("city, area").eq("id", userId).maybeSingle();
+    if (meErr) throw new Error(`Failed to load your profile: ${meErr.message}`);
+    const city = me?.city ?? "Latur";
 
-    if (data.scope === "challenge" && data.missionId) {
-      const { data: ums } = await supabaseAdmin
-        .from("user_missions")
-        .select("progress, user_id, profiles!inner(id, name, city, avatar_url)")
-        .eq("mission_id", data.missionId)
-        .order("progress", { ascending: false })
-        .limit(50);
-      return (ums ?? []).map((r: any, i: number) => ({
-        rank: i + 1,
-        user_id: r.profiles.id,
-        name: r.profiles.name,
-        city: r.profiles.city,
-        avatar_url: r.profiles.avatar_url,
-        score: Number(r.progress ?? 0),
-        isYou: r.profiles.id === userId,
-      }));
-    }
-
-    // city / friends: rank by period score (cross-user reads via admin)
-    let query = supabaseAdmin.from("profiles").select("id, name, city, avatar_url, coins").eq("city", me?.city ?? "Latur");
+    // Fetch all city profiles via SECURITY DEFINER RPC (safe columns only).
+    const { data: cityProfiles, error: lbErr } = await supabase.rpc("get_city_leaderboard", { target_city: city });
+    if (lbErr) throw new Error(`Failed to load leaderboard: ${lbErr.message}`);
+    const profiles = (cityProfiles ?? []) as Array<{ id: string; name: string; city: string; avatar_url: string | null; coins: number }>;
 
     if (data.period === "all") {
-      const { data: rows } = await query.order("coins", { ascending: false }).limit(50);
-      return (rows ?? []).map((r: any, i: number) => ({
-        rank: i + 1,
-        user_id: r.id,
-        name: r.name,
-        city: r.city,
-        avatar_url: r.avatar_url,
-        score: r.coins,
-        isYou: r.id === userId,
-      }));
+      return profiles
+        .slice()
+        .sort((a, b) => (b.coins ?? 0) - (a.coins ?? 0))
+        .slice(0, 50)
+        .map((r, i) => ({
+          rank: i + 1,
+          user_id: r.id,
+          name: r.name,
+          city: r.city,
+          avatar_url: r.avatar_url,
+          score: r.coins ?? 0,
+          isYou: r.id === userId,
+        }));
     }
 
-    // week/month: sum steps in window across users in same city
+    // week/month: sum steps in window across users in same city via SECURITY DEFINER RPC
     const days = data.period === "week" ? 7 : 30;
     const since = new Date();
     since.setDate(since.getDate() - days);
     const sinceISO = since.toISOString().slice(0, 10);
 
-    const { data: cityProfiles } = await query.limit(200);
-    const ids = (cityProfiles ?? []).map((p: any) => p.id);
-    if (!ids.length) return [];
-
-    const { data: activities } = await supabaseAdmin
-      .from("daily_activity")
-      .select("user_id, steps")
-      .in("user_id", ids)
-      .gte("date", sinceISO);
-
+    const { data: activity, error: actErr } = await supabase.rpc("get_city_activity", {
+      target_city: city,
+      since_date: sinceISO,
+    });
+    if (actErr) throw new Error(`Failed to load activity: ${actErr.message}`);
     const totals = new Map<string, number>();
-    (activities ?? []).forEach((a: any) => {
-      totals.set(a.user_id, (totals.get(a.user_id) ?? 0) + Number(a.steps ?? 0));
+    ((activity ?? []) as Array<{ user_id: string; total_steps: number }>).forEach((a) => {
+      totals.set(a.user_id, Number(a.total_steps ?? 0));
     });
 
-    const rows = (cityProfiles ?? [])
-      .map((p: any) => ({
+    return profiles
+      .map((p) => ({
         user_id: p.id,
         name: p.name,
         city: p.city,
@@ -372,9 +355,8 @@ export const getLeaderboard = createServerFn({ method: "GET" })
       .sort((a, b) => b.score - a.score)
       .slice(0, 50)
       .map((r, i) => ({ rank: i + 1, ...r }));
-
-    return rows;
   });
+
 
 export const getRewards = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
