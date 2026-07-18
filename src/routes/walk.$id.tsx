@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { RouteSvg } from "@/components/chalio/RouteSvg";
 import { getActivity } from "@/lib/chalio.functions";
 import { useRequireAuth } from "@/lib/auth-hooks";
-import { BrandLockup } from "@/components/chalio/BrandLockup";
+import { IconMark } from "@/components/chalio/BrandLockup";
 
 export const Route = createFileRoute("/walk/$id")({
   head: () => ({ meta: [{ title: "Walk summary — Chalio" }] }),
@@ -130,7 +130,7 @@ function SummaryScreen() {
             </p>
             <p className="mt-1 text-xl font-extrabold">Walk complete</p>
           </div>
-          <BrandLockup icon="only" iconSize={36} />
+          <IconMark size={36} />
         </div>
 
         <div className="mt-4 overflow-hidden rounded-2xl">
