@@ -556,7 +556,7 @@ export const saveActivity = createServerFn({ method: "POST" })
         avg_speed_kmh: avgSpeed,
         calories,
         steps,
-        path: data.path as unknown as object,
+        path: data.path as unknown as never,
       })
       .select("*")
       .single();
