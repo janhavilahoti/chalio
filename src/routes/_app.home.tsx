@@ -22,10 +22,11 @@ function HomeScreen() {
   const navigate = useNavigate();
   const toastedRef = useRef(false);
 
-  const { data, isLoading, refetch, isRefetching } = useQuery({
+  const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ["bootstrap"],
     queryFn: () => bootstrap({}),
     staleTime: 30_000,
+    retry: 1,
   });
 
   useEffect(() => {
