@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { BrandLockup, Tagline } from "@/components/chalio/BrandLockup";
 import { supabase } from "@/integrations/supabase/client";
+import { isHealthPlatform, checkHealthAuthorized } from "@/lib/native-health";
 
 export const Route = createFileRoute("/")({
   component: SplashScreen,
@@ -19,13 +20,19 @@ function SplashScreen() {
           .select("fit_connected")
           .eq("id", data.session.user.id)
           .maybeSingle();
-        navigate({ to: profile?.fit_connected ? "/home" : "/connect-fit", replace: true });
+        // On native, always verify the OS-level authorization independently
+        // of the DB flag — the flag may have been set by a prior web session.
+        const connected = isHealthPlatform()
+          ? await checkHealthAuthorized()
+          : !!profile?.fit_connected;
+        navigate({ to: connected ? "/home" : "/connect-fit", replace: true });
       } else {
         navigate({ to: "/login", replace: true });
       }
     }, 1500);
     return () => clearTimeout(t);
   }, [navigate]);
+
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-6">
