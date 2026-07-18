@@ -2,10 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // ---------- helpers ----------
-async function readSettings(_supabase: any) {
+async function readSettings(supabase: any) {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin.from("settings").select("key,value");
+    const { data } = await supabase.from("settings").select("key,value");
     const map: Record<string, any> = {};
     (data ?? []).forEach((r: any) => (map[r.key] = r.value));
     return {
@@ -14,7 +13,6 @@ async function readSettings(_supabase: any) {
       streakBonuses: (map.streak_bonuses ?? {}) as Record<string, number>,
     };
   } catch (e) {
-    // Fall back to safe defaults if service role isn't available at runtime.
     return { stepsPerCoin: 100, dailyCoinCap: 200, streakBonuses: {} as Record<string, number> };
   }
 }
@@ -156,10 +154,9 @@ export const getBootstrap = createServerFn({ method: "GET" })
       supabase.from("daily_activity").select("*").eq("user_id", userId).eq("date", todayISO()).maybeSingle(),
     ]);
 
-    // rank in city — SECURITY DEFINER RPC restricted to service_role
+    // rank in city — SECURITY DEFINER RPC, callable by authenticated users (returns safe columns only)
     const city = profile?.city ?? "Latur";
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: cityUsers, error: rankErr } = await supabaseAdmin.rpc("get_city_leaderboard", { target_city: city });
+    const { data: cityUsers, error: rankErr } = await supabase.rpc("get_city_leaderboard", { target_city: city });
     if (rankErr) console.error("[getBootstrap] get_city_leaderboard failed:", rankErr.message);
     const currentRank = (cityUsers ?? []).findIndex((u: any) => u.id === userId) + 1;
     const rankImproved =
@@ -307,9 +304,8 @@ export const getLeaderboard = createServerFn({ method: "GET" })
     if (meErr) throw new Error(`Failed to load your profile: ${meErr.message}`);
     const city = me?.city ?? "Latur";
 
-    // Fetch all city profiles via SECURITY DEFINER RPC (service-role only, safe columns).
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: cityProfiles, error: lbErr } = await supabaseAdmin.rpc("get_city_leaderboard", { target_city: city });
+    // Fetch all city profiles via SECURITY DEFINER RPC (authenticated-callable, returns safe columns only).
+    const { data: cityProfiles, error: lbErr } = await supabase.rpc("get_city_leaderboard", { target_city: city });
     if (lbErr) throw new Error(`Failed to load leaderboard: ${lbErr.message}`);
     const profiles = (cityProfiles ?? []) as Array<{ id: string; name: string; city: string; avatar_url: string | null; coins: number }>;
 
@@ -335,7 +331,7 @@ export const getLeaderboard = createServerFn({ method: "GET" })
     since.setDate(since.getDate() - days);
     const sinceISO = since.toISOString().slice(0, 10);
 
-    const { data: activity, error: actErr } = await supabaseAdmin.rpc("get_city_activity", {
+    const { data: activity, error: actErr } = await supabase.rpc("get_city_activity", {
       target_city: city,
       since_date: sinceISO,
     });
