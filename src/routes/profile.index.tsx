@@ -72,22 +72,34 @@ function ProfileScreen() {
   });
 
   const [connecting, setConnecting] = useState(false);
+  const [needsInstall, setNeedsInstall] = useState(false);
 
   async function handleConnect() {
     console.log("[profile] Connect tapped, native=", native);
     if (connecting) return;
+    if (needsInstall) {
+      console.log("[profile] opening Play Store for Health Connect");
+      await openHealthConnectPlayStore();
+      return;
+    }
     setConnecting(true);
     try {
       if (native) {
-        const avail = await checkHealthAvailability();
-        console.log("[profile] health availability", avail);
+        console.log("[profile] checking Health Connect availability (4s timeout)");
+        const avail = await checkHealthAvailability(4000);
+        console.log("[profile] health availability result", avail);
         if (!avail.available) {
-          toast.error("Health Connect not available", {
-            description: "Install Health Connect from the Play Store, then try again.",
+          setNeedsInstall(true);
+          toast.error("Health Connect not installed", {
+            description: "Tap Install to get it from the Play Store.",
           });
           return;
         }
-        const ok = await requestHealthAuthorization();
+        console.log("[profile] requesting authorization (30s timeout)");
+        const ok = await requestHealthAuthorization(30000).catch((e) => {
+          console.warn("[profile] requestAuthorization threw", e);
+          return false;
+        });
         console.log("[profile] auth granted?", ok);
         if (!ok) {
           toast.error("Permission denied");
@@ -98,6 +110,7 @@ function ProfileScreen() {
       await markFn({});
       toast.success("Connected");
       await qc.invalidateQueries({ refetchType: "all" });
+
     } catch (e) {
       console.error("[profile] connect failed", e);
       toast.error("Couldn't connect", { description: (e as Error).message });
