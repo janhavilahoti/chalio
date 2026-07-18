@@ -2,13 +2,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Footprints, Flame, Timer, Plus, RefreshCw } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { IconMark } from "@/components/chalio/BrandLockup";
 import { Avatar } from "@/components/chalio/Avatar";
 import { ProgressRing } from "@/components/chalio/ProgressRing";
 import { Coin } from "@/components/chalio/Coin";
-import { getBootstrap, simulateActivity } from "@/lib/chalio.functions";
+import { getBootstrap, simulateActivity, syncHealthActivity } from "@/lib/chalio.functions";
+import { isHealthPlatform, readTodayTotals } from "@/lib/native-health";
 
 export const Route = createFileRoute("/_app/home")({
   head: () => ({ meta: [{ title: "Home — Chalio" }] }),
