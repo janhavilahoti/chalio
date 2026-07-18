@@ -156,9 +156,10 @@ export const getBootstrap = createServerFn({ method: "GET" })
       supabase.from("daily_activity").select("*").eq("user_id", userId).eq("date", todayISO()).maybeSingle(),
     ]);
 
-    // rank in city — use SECURITY DEFINER RPC (safe columns, authenticated-only)
+    // rank in city — SECURITY DEFINER RPC restricted to service_role
     const city = profile?.city ?? "Latur";
-    const { data: cityUsers, error: rankErr } = await supabase.rpc("get_city_leaderboard", { target_city: city });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cityUsers, error: rankErr } = await supabaseAdmin.rpc("get_city_leaderboard", { target_city: city });
     if (rankErr) console.error("[getBootstrap] get_city_leaderboard failed:", rankErr.message);
     const currentRank = (cityUsers ?? []).findIndex((u: any) => u.id === userId) + 1;
     const rankImproved =
@@ -306,8 +307,9 @@ export const getLeaderboard = createServerFn({ method: "GET" })
     if (meErr) throw new Error(`Failed to load your profile: ${meErr.message}`);
     const city = me?.city ?? "Latur";
 
-    // Fetch all city profiles via SECURITY DEFINER RPC (safe columns only).
-    const { data: cityProfiles, error: lbErr } = await supabase.rpc("get_city_leaderboard", { target_city: city });
+    // Fetch all city profiles via SECURITY DEFINER RPC (service-role only, safe columns).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cityProfiles, error: lbErr } = await supabaseAdmin.rpc("get_city_leaderboard", { target_city: city });
     if (lbErr) throw new Error(`Failed to load leaderboard: ${lbErr.message}`);
     const profiles = (cityProfiles ?? []) as Array<{ id: string; name: string; city: string; avatar_url: string | null; coins: number }>;
 
@@ -333,7 +335,7 @@ export const getLeaderboard = createServerFn({ method: "GET" })
     since.setDate(since.getDate() - days);
     const sinceISO = since.toISOString().slice(0, 10);
 
-    const { data: activity, error: actErr } = await supabase.rpc("get_city_activity", {
+    const { data: activity, error: actErr } = await supabaseAdmin.rpc("get_city_activity", {
       target_city: city,
       since_date: sinceISO,
     });
