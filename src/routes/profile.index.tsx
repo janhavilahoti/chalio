@@ -29,6 +29,7 @@ import {
   checkHealthAuthorized,
   requestHealthAuthorization,
   checkHealthAvailability,
+  openHealthConnectPlayStore,
 } from "@/lib/native-health";
 
 const BADGE_COLORS = ["bg-brand-red", "bg-brand-yellow", "bg-brand-blue", "bg-brand-green"];
