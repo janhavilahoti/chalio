@@ -3,15 +3,20 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // ---------- helpers ----------
 async function readSettings(_supabase: any) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.from("settings").select("key,value");
-  const map: Record<string, any> = {};
-  (data ?? []).forEach((r: any) => (map[r.key] = r.value));
-  return {
-    stepsPerCoin: Number(map.steps_per_coin ?? 100),
-    dailyCoinCap: Number(map.daily_coin_cap ?? 200),
-    streakBonuses: (map.streak_bonuses ?? {}) as Record<string, number>,
-  };
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin.from("settings").select("key,value");
+    const map: Record<string, any> = {};
+    (data ?? []).forEach((r: any) => (map[r.key] = r.value));
+    return {
+      stepsPerCoin: Number(map.steps_per_coin ?? 100),
+      dailyCoinCap: Number(map.daily_coin_cap ?? 200),
+      streakBonuses: (map.streak_bonuses ?? {}) as Record<string, number>,
+    };
+  } catch (e) {
+    // Fall back to safe defaults if service role isn't available at runtime.
+    return { stepsPerCoin: 100, dailyCoinCap: 200, streakBonuses: {} as Record<string, number> };
+  }
 }
 
 function todayISO() {
