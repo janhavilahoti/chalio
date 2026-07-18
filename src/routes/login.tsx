@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BrandLockup } from "@/components/chalio/BrandLockup";
-import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
@@ -28,16 +27,14 @@ function LoginScreen() {
   async function handleGoogle() {
     setBusy(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin + "/connect-fit" },
       });
-      if (result.error) {
-        toast.error("Couldn't sign in", { description: (result.error as Error).message });
-        return;
+      if (error) {
+        toast.error("Couldn't sign in", { description: error.message });
       }
-      if (result.redirected) return;
-      // popup flow: session set — navigate
-      navigate({ to: "/connect-fit", replace: true });
+      // Full-page redirect to Google follows; nothing else to do here.
     } catch (e) {
       toast.error("Couldn't sign in", { description: e instanceof Error ? e.message : String(e) });
     } finally {
