@@ -375,10 +375,68 @@ function SettingRow({
   );
 }
 
-function Toggle() {
+function NotificationsRow() {
+  const [enabled, setEnabled] = useState<boolean>(false);
+
+  useEffect(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem("chalio.notifications") : null;
+    const perm =
+      typeof window !== "undefined" && "Notification" in window ? Notification.permission : "denied";
+    setEnabled(stored === "on" && perm === "granted");
+  }, []);
+
+  async function toggle() {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      toast.error("Notifications aren't supported on this device");
+      return;
+    }
+    if (enabled) {
+      localStorage.setItem("chalio.notifications", "off");
+      setEnabled(false);
+      toast.success("Notifications turned off");
+      return;
+    }
+    try {
+      let perm = Notification.permission;
+      if (perm === "default") perm = await Notification.requestPermission();
+      if (perm !== "granted") {
+        toast.error("Permission denied", {
+          description: "Enable notifications in your device settings.",
+        });
+        return;
+      }
+      localStorage.setItem("chalio.notifications", "on");
+      setEnabled(true);
+      toast.success("Notifications turned on");
+    } catch (e) {
+      toast.error("Couldn't enable notifications", { description: (e as Error).message });
+    }
+  }
+
   return (
-    <span className="relative inline-flex h-6 w-10 items-center rounded-full bg-brand-green">
-      <span className="absolute right-1 h-4 w-4 rounded-full bg-white" />
-    </span>
+    <li>
+      <button
+        type="button"
+        onClick={toggle}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-[15px] font-semibold text-slate-800"
+      >
+        <span className="flex items-center gap-3">
+          <Bell className="h-4 w-4" strokeWidth={2.2} />
+          Notifications
+        </span>
+        <span
+          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors ${
+            enabled ? "bg-brand-green" : "bg-slate-300"
+          }`}
+        >
+          <span
+            className={`absolute h-4 w-4 rounded-full bg-white transition-all ${
+              enabled ? "right-1" : "left-1"
+            }`}
+          />
+        </span>
+      </button>
+    </li>
   );
 }
+
