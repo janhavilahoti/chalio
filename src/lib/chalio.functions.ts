@@ -419,7 +419,7 @@ export const updateProfileLocation = createServerFn({ method: "POST" })
   .inputValidator((input: { city?: string | null; area?: string | null }) => input)
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, string | null> = {};
+    const patch: { city?: string; area?: string } = {};
     if (typeof data.city === "string" && data.city.trim()) patch.city = data.city.trim();
     if (typeof data.area === "string" && data.area.trim()) patch.area = data.area.trim();
     if (Object.keys(patch).length === 0) return { ok: true };
