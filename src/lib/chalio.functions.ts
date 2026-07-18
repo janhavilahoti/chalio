@@ -2,8 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // ---------- helpers ----------
-async function readSettings(supabase: any) {
-  const { data } = await supabase.from("settings").select("key,value");
+async function readSettings(_supabase: any) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("settings").select("key,value");
   const map: Record<string, any> = {};
   (data ?? []).forEach((r: any) => (map[r.key] = r.value));
   return {
