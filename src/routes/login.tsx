@@ -27,10 +27,15 @@ function LoginScreen() {
   async function handleGoogle() {
     setBusy(true);
     try {
+      const { isNativePlatform, NATIVE_REDIRECT_URL } = await import("@/lib/native-auth");
+      const redirectTo = isNativePlatform()
+        ? NATIVE_REDIRECT_URL
+        : window.location.origin + "/connect-fit";
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.origin + "/connect-fit" },
+        options: { redirectTo, skipBrowserRedirect: false },
       });
+
       if (error) {
         toast.error("Couldn't sign in", { description: error.message });
       }
