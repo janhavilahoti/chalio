@@ -185,6 +185,15 @@ function HomeScreen() {
         </button>
       )}
 
+      <button
+        type="button"
+        onClick={() => navigate({ to: "/walk" })}
+        className="mt-4 inline-flex items-center justify-center gap-2 self-center rounded-full bg-brand-green px-6 py-3 text-sm font-extrabold text-white shadow-sm active:scale-[0.99]"
+      >
+        <Play className="h-4 w-4" strokeWidth={2.6} />
+        Start walk
+      </button>
+
       <div className="mt-6 space-y-2.5">
         <RowLink
           to="/leaderboard"
