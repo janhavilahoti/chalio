@@ -164,15 +164,26 @@ function HomeScreen() {
         <Stat Icon={Timer} color="text-brand-green" value={`${today.active_minutes ?? 0} min`} />
       </div>
 
-      <button
-        type="button"
-        disabled={sim.isPending}
-        onClick={() => sim.mutate(1000)}
-        className="mt-6 inline-flex items-center justify-center gap-2 self-center rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
-      >
-        <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
-        Log +1,000 steps (demo)
-      </button>
+      {native ? (
+        <button
+          type="button"
+          onClick={() => runHealthSync()}
+          className="mt-6 inline-flex items-center justify-center gap-2 self-center rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+        >
+          <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.6} />
+          Sync Health Connect
+        </button>
+      ) : (
+        <button
+          type="button"
+          disabled={sim.isPending}
+          onClick={() => sim.mutate(1000)}
+          className="mt-6 inline-flex items-center justify-center gap-2 self-center rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+        >
+          <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
+          Log +1,000 steps (demo)
+        </button>
+      )}
 
       <div className="mt-6 space-y-2.5">
         <RowLink
