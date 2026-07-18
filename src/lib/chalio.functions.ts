@@ -247,6 +247,76 @@ export const simulateActivity = createServerFn({ method: "POST" })
     return { coinDelta, newSteps, missionsCompleted: missionResult.newlyCompleted };
   });
 
+// Native Health Connect sync — writes ABSOLUTE totals for today (idempotent),
+// unlike simulateActivity which adds. Reuses the same coin/mission pipeline.
+export const syncHealthActivity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { steps: number; distance_km: number; calories: number }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const settings = await readSettings(supabase);
+    const today = todayISO();
+
+    const newSteps = Math.max(0, Math.floor(data.steps));
+    const distance = Math.max(0, +Number(data.distance_km).toFixed(2));
+    const calories = Math.max(0, Math.floor(data.calories));
+    const activeMin = Math.round(newSteps / 110);
+
+    const { data: existing } = await supabase
+      .from("daily_activity")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("date", today)
+      .maybeSingle();
+
+    // Never regress totals — Health Connect can lag behind on-device counters.
+    const finalSteps = Math.max(existing?.steps ?? 0, newSteps);
+    const finalDistance = Math.max(Number(existing?.distance_km ?? 0), distance);
+    const finalCalories = Math.max(existing?.calories ?? 0, calories);
+    const finalActiveMin = Math.max(existing?.active_minutes ?? 0, activeMin);
+
+    const eligibleCoinsUncapped = Math.floor(finalSteps / settings.stepsPerCoin);
+    const eligibleCoins = Math.min(eligibleCoinsUncapped, settings.dailyCoinCap);
+    const prevAwarded = existing?.coins_awarded ?? 0;
+    const coinDelta = Math.max(0, eligibleCoins - prevAwarded);
+
+    if (existing) {
+      await supabase
+        .from("daily_activity")
+        .update({
+          steps: finalSteps,
+          distance_km: finalDistance,
+          calories: finalCalories,
+          active_minutes: finalActiveMin,
+          coins_awarded: eligibleCoins,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id);
+    } else {
+      await supabase.from("daily_activity").insert({
+        user_id: userId,
+        date: today,
+        steps: finalSteps,
+        distance_km: finalDistance,
+        calories: finalCalories,
+        active_minutes: finalActiveMin,
+        coins_awarded: eligibleCoins,
+      });
+    }
+
+    if (coinDelta > 0) {
+      await supabase.rpc("award_coins", {
+        _user: userId,
+        _amount: coinDelta,
+        _reason: "steps",
+        _metadata: { date: today, steps: finalSteps, source: "health_connect" },
+      });
+    }
+
+    const missionResult = await recomputeMissionProgress(supabase, userId);
+    return { coinDelta, steps: finalSteps, missionsCompleted: missionResult.newlyCompleted };
+  });
+
 export const listMissions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
