@@ -212,7 +212,11 @@ function ProfileScreen() {
                 {native ? "Health Connect" : "Google Fit"}
               </p>
               <p className="text-[12px] font-semibold text-slate-500">
-                {isConnected ? "Connected" : "Not connected"}
+                {isConnected
+                  ? "Connected"
+                  : needsInstall
+                    ? "Not installed"
+                    : "Not connected"}
               </p>
             </div>
           </div>
