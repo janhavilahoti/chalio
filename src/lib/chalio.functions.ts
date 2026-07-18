@@ -388,12 +388,11 @@ export const getProfileStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const [{ data: profileRows }, { data: activity }, { data: badges }] = await Promise.all([
-      supabase.rpc("get_my_profile"),
+    const [{ data: profile }, { data: activity }, { data: badges }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("daily_activity").select("steps, distance_km").eq("user_id", userId),
       supabase.from("badges").select("*").eq("user_id", userId).order("earned_at", { ascending: false }),
     ]);
-    const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
     const totalSteps = (activity ?? []).reduce((s: number, a: any) => s + Number(a.steps ?? 0), 0);
     const totalKm = +(activity ?? []).reduce((s: number, a: any) => s + Number(a.distance_km ?? 0), 0).toFixed(1);
     const level = Math.max(1, Math.floor(totalSteps / 50000) + 1);
