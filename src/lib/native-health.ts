@@ -58,21 +58,22 @@ export async function openHealthConnectPlayStore(): Promise<void> {
   const pkg = "com.google.android.apps.healthdata";
   const marketUrl = `market://details?id=${pkg}`;
   const httpsUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
-  try {
-    if (isHealthPlatform()) {
-      const { App } = await import("@capacitor/app");
-      const res = await App.openUrl({ url: marketUrl });
-      if (!res?.completed) await App.openUrl({ url: httpsUrl });
-      return;
-    }
-  } catch (e) {
-    console.warn("[health] openHealthConnectPlayStore native open failed", e);
+
+  if (isHealthPlatform()) {
+    // Try market:// first (opens Play Store app directly). If it doesn't
+    // resolve, fall back to https listing which Android will route to Play Store.
     try {
-      const { App } = await import("@capacitor/app");
-      await App.openUrl({ url: httpsUrl });
+      window.location.href = marketUrl;
+      setTimeout(() => {
+        try {
+          window.location.href = httpsUrl;
+        } catch (e) {
+          console.warn("[health] https fallback failed", e);
+        }
+      }, 800);
       return;
-    } catch (e2) {
-      console.warn("[health] https fallback failed", e2);
+    } catch (e) {
+      console.warn("[health] market:// open failed, using https", e);
     }
   }
   try {
