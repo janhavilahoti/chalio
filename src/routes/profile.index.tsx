@@ -70,15 +70,24 @@ function ProfileScreen() {
     onError: (e) => toast.error("Couldn't disconnect", { description: (e as Error).message }),
   });
 
+  const [connecting, setConnecting] = useState(false);
+
   async function handleConnect() {
+    console.log("[profile] Connect tapped, native=", native);
+    if (connecting) return;
+    setConnecting(true);
     try {
       if (native) {
         const avail = await checkHealthAvailability();
+        console.log("[profile] health availability", avail);
         if (!avail.available) {
-          toast.error("Health Connect not available");
+          toast.error("Health Connect not available", {
+            description: "Install Health Connect from the Play Store, then try again.",
+          });
           return;
         }
         const ok = await requestHealthAuthorization();
+        console.log("[profile] auth granted?", ok);
         if (!ok) {
           toast.error("Permission denied");
           return;
@@ -89,9 +98,13 @@ function ProfileScreen() {
       toast.success("Connected");
       await qc.invalidateQueries({ refetchType: "all" });
     } catch (e) {
+      console.error("[profile] connect failed", e);
       toast.error("Couldn't connect", { description: (e as Error).message });
+    } finally {
+      setConnecting(false);
     }
   }
+
 
   async function signOut() {
     await qc.cancelQueries();
