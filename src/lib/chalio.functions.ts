@@ -299,10 +299,11 @@ export const getLeaderboard = createServerFn({ method: "GET" })
   .inputValidator((input: { scope: "city" | "challenge" | "friends"; period: "week" | "month" | "all"; missionId?: string }) => input)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: me } = await supabase.from("profiles").select("city, area").eq("id", userId).single();
 
     if (data.scope === "challenge" && data.missionId) {
-      const { data: ums } = await supabase
+      const { data: ums } = await supabaseAdmin
         .from("user_missions")
         .select("progress, user_id, profiles!inner(id, name, city, avatar_url)")
         .eq("mission_id", data.missionId)
@@ -319,8 +320,8 @@ export const getLeaderboard = createServerFn({ method: "GET" })
       }));
     }
 
-    // city / friends: rank by period score
-    let query = supabase.from("profiles").select("id, name, city, avatar_url, coins").eq("city", me?.city ?? "Latur");
+    // city / friends: rank by period score (cross-user reads via admin)
+    let query = supabaseAdmin.from("profiles").select("id, name, city, avatar_url, coins").eq("city", me?.city ?? "Latur");
 
     if (data.period === "all") {
       const { data: rows } = await query.order("coins", { ascending: false }).limit(50);
@@ -345,7 +346,7 @@ export const getLeaderboard = createServerFn({ method: "GET" })
     const ids = (cityProfiles ?? []).map((p: any) => p.id);
     if (!ids.length) return [];
 
-    const { data: activities } = await supabase
+    const { data: activities } = await supabaseAdmin
       .from("daily_activity")
       .select("user_id, steps")
       .in("user_id", ids)
