@@ -67,17 +67,13 @@ async function recomputeMissionProgress(supabase: any, userId: string) {
     await supabase.from("user_missions").update(updates).eq("id", um.id);
 
     if (nowCompleted && !wasCompleted && !um.claimed) {
-      // auto-award coins + badge
-      await supabase.from("coin_transactions").insert({
-        user_id: userId,
-        amount: m.reward_coins,
-        reason: `mission:${m.id}`,
-        metadata: { title: m.title },
+      // auto-award coins (transaction + balance) atomically via RPC
+      await supabase.rpc("award_coins", {
+        _user: userId,
+        _amount: m.reward_coins,
+        _reason: `mission:${m.id}`,
+        _metadata: { title: m.title },
       });
-      
-      // increment coins on profile
-      const { data: p } = await supabase.from("profiles").select("coins").eq("id", userId).single();
-      await supabase.from("profiles").update({ coins: (p?.coins ?? 0) + m.reward_coins }).eq("id", userId);
       await supabase.from("badges").insert({
         user_id: userId,
         mission_id: m.id,
@@ -121,13 +117,12 @@ async function processDailyLogin(supabase: any, userId: string) {
     .eq("id", userId);
 
   if (bonus > 0) {
-    await supabase.from("coin_transactions").insert({
-      user_id: userId,
-      amount: bonus,
-      reason: `streak_bonus:${newStreak}`,
+    await supabase.rpc("award_coins", {
+      _user: userId,
+      _amount: bonus,
+      _reason: `streak_bonus:${newStreak}`,
+      _metadata: {},
     });
-    const { data: p } = await supabase.from("profiles").select("coins").eq("id", userId).single();
-    await supabase.from("profiles").update({ coins: (p?.coins ?? 0) + bonus }).eq("id", userId);
   }
 
   return { streakBonus: bonus, currentStreak: newStreak };
@@ -240,14 +235,12 @@ export const simulateActivity = createServerFn({ method: "POST" })
     }
 
     if (coinDelta > 0) {
-      await supabase.from("coin_transactions").insert({
-        user_id: userId,
-        amount: coinDelta,
-        reason: "steps",
-        metadata: { date: today, steps: newSteps },
+      await supabase.rpc("award_coins", {
+        _user: userId,
+        _amount: coinDelta,
+        _reason: "steps",
+        _metadata: { date: today, steps: newSteps },
       });
-      const { data: p } = await supabase.from("profiles").select("coins").eq("id", userId).single();
-      await supabase.from("profiles").update({ coins: (p?.coins ?? 0) + coinDelta }).eq("id", userId);
     }
 
     const missionResult = await recomputeMissionProgress(supabase, userId);
