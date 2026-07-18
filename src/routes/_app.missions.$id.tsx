@@ -28,16 +28,16 @@ function MissionDetail() {
 
   const joinMut = useMutation({
     mutationFn: () => join({ data: { missionId: id } }),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Mission joined");
-      qc.invalidateQueries();
+      await qc.invalidateQueries({ refetchType: "all" });
     },
   });
   const leaveMut = useMutation({
     mutationFn: () => leave({ data: { missionId: id } }),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Left mission");
-      qc.invalidateQueries();
+      await qc.invalidateQueries({ refetchType: "all" });
       navigate({ to: "/missions" });
     },
   });
