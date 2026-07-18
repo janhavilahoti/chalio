@@ -88,7 +88,7 @@ function HomeScreen() {
       <p className="mt-6 text-[15px] font-semibold text-slate-500">Hello, {firstName}</p>
 
       <div className="mt-4 flex flex-col items-center">
-        <ProgressRing value={today.steps ?? 0} goal={profile?.step_goal ?? 10000} />
+        <ProgressRing value={today.steps ?? 0} goal={profile?.daily_goal ?? 10000} />
       </div>
 
       <div className="mt-8 grid grid-cols-3 gap-3">
