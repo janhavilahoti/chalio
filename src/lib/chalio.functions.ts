@@ -117,13 +117,12 @@ async function processDailyLogin(supabase: any, userId: string) {
     .eq("id", userId);
 
   if (bonus > 0) {
-    await supabase.from("coin_transactions").insert({
-      user_id: userId,
-      amount: bonus,
-      reason: `streak_bonus:${newStreak}`,
+    await supabase.rpc("award_coins", {
+      _user: userId,
+      _amount: bonus,
+      _reason: `streak_bonus:${newStreak}`,
+      _metadata: {},
     });
-    const { data: p } = await supabase.from("profiles").select("coins").eq("id", userId).single();
-    await supabase.from("profiles").update({ coins: (p?.coins ?? 0) + bonus }).eq("id", userId);
   }
 
   return { streakBonus: bonus, currentStreak: newStreak };
