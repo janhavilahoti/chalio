@@ -24,9 +24,9 @@ function MissionsScreen() {
 
   const joinMut = useMutation({
     mutationFn: (missionId: string) => join({ data: { missionId } }),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Mission joined");
-      qc.invalidateQueries();
+      await qc.invalidateQueries({ refetchType: "all" });
     },
   });
 
