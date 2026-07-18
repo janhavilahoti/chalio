@@ -488,3 +488,214 @@ export const updateProfileLocation = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Walk activities ----------
+
+type LatLng = { lat: number; lng: number; t?: number };
+
+function haversineKm(a: LatLng, b: LatLng): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.lat * Math.PI) / 180) *
+      Math.cos((b.lat * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+/** Sum path distance, excluding any segment implying >15 km/h sustained movement (anti-cheat). */
+function computeCleanDistanceKm(path: LatLng[]): number {
+  if (!Array.isArray(path) || path.length < 2) return 0;
+  let total = 0;
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1];
+    const b = path[i];
+    const d = haversineKm(a, b);
+    const dt = a.t && b.t ? Math.max(0.001, (b.t - a.t) / 1000 / 3600) : d / 5; // fallback 5 km/h
+    const speed = d / dt;
+    if (speed > 15) continue;
+    total += d;
+  }
+  return +total.toFixed(3);
+}
+
+export const saveActivity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      started_at: string;
+      ended_at: string;
+      duration_seconds: number;
+      path: LatLng[];
+    }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const settings = await readSettings(supabase);
+
+    const distanceKm = computeCleanDistanceKm(data.path ?? []);
+    const durationSec = Math.max(1, Math.floor(data.duration_seconds));
+    const hours = durationSec / 3600;
+    const avgSpeed = +(distanceKm / Math.max(hours, 0.001)).toFixed(2);
+    // MET-based calories: walking ~ 3.5 MET at moderate pace, assume 70kg average
+    const met = avgSpeed < 4 ? 3.0 : avgSpeed < 6 ? 4.3 : 5.5;
+    const calories = Math.round(met * 70 * hours);
+    const steps = Math.round((distanceKm * 1000) / 0.75); // ~0.75m per step
+
+    // Insert activity row
+    const { data: row, error } = await supabase
+      .from("activities")
+      .insert({
+        user_id: userId,
+        started_at: data.started_at,
+        ended_at: data.ended_at,
+        duration_seconds: durationSec,
+        distance_km: distanceKm,
+        avg_speed_kmh: avgSpeed,
+        calories,
+        steps,
+        path: data.path as unknown as object,
+      })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+
+    // Roll into today's daily_activity (additive) and award coins for steps
+    const today = todayISO();
+    const { data: existing } = await supabase
+      .from("daily_activity")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("date", today)
+      .maybeSingle();
+
+    const newSteps = (existing?.steps ?? 0) + steps;
+    const newDistance = +((existing?.distance_km ?? 0) + distanceKm).toFixed(2);
+    const newCalories = (existing?.calories ?? 0) + calories;
+    const newActive = (existing?.active_minutes ?? 0) + Math.round(durationSec / 60);
+    const eligibleCoins = Math.min(
+      Math.floor(newSteps / settings.stepsPerCoin),
+      settings.dailyCoinCap,
+    );
+    const prevAwarded = existing?.coins_awarded ?? 0;
+    const coinDelta = Math.max(0, eligibleCoins - prevAwarded);
+
+    if (existing) {
+      await supabase
+        .from("daily_activity")
+        .update({
+          steps: newSteps,
+          distance_km: newDistance,
+          calories: newCalories,
+          active_minutes: newActive,
+          coins_awarded: eligibleCoins,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id);
+    } else {
+      await supabase.from("daily_activity").insert({
+        user_id: userId,
+        date: today,
+        steps: newSteps,
+        distance_km: newDistance,
+        calories: newCalories,
+        active_minutes: newActive,
+        coins_awarded: eligibleCoins,
+      });
+    }
+
+    if (coinDelta > 0) {
+      await supabase.rpc("award_coins", {
+        _user: userId,
+        _amount: coinDelta,
+        _reason: `walk:${row.id}`,
+        _metadata: { activity_id: row.id, steps, distance_km: distanceKm },
+      });
+      await supabase.from("activities").update({ coins_awarded: coinDelta }).eq("id", row.id);
+    }
+
+    const missionResult = await recomputeMissionProgress(supabase, userId);
+
+    return {
+      activity: { ...row, coins_awarded: coinDelta },
+      coinDelta,
+      missionsCompleted: missionResult.newlyCompleted,
+    };
+  });
+
+export const listActivities = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("activities")
+      .select("id, started_at, ended_at, duration_seconds, distance_km, avg_speed_kmh, calories, steps, coins_awarded")
+      .eq("user_id", userId)
+      .order("started_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const getActivity = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row, error } = await supabase
+      .from("activities")
+      .select("*")
+      .eq("id", data.id)
+      .eq("user_id", userId)
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const disconnectFit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase.from("profiles").update({ fit_connected: false }).eq("id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const updateProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { name?: string; city?: string; area?: string; avatar_url?: string; daily_goal?: number }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const patch: Record<string, unknown> = {};
+    if (typeof data.name === "string" && data.name.trim()) patch.name = data.name.trim();
+    if (typeof data.city === "string") patch.city = data.city.trim() || null;
+    if (typeof data.area === "string") patch.area = data.area.trim() || null;
+    if (typeof data.avatar_url === "string") patch.avatar_url = data.avatar_url || null;
+    if (typeof data.daily_goal === "number" && data.daily_goal > 0)
+      patch.daily_goal = Math.min(100000, Math.floor(data.daily_goal));
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await supabase.from("profiles").update(patch).eq("id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getWeeklyActivity = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const since = new Date();
+    since.setDate(since.getDate() - 6);
+    const sinceISO = since.toISOString().slice(0, 10);
+    const { data } = await supabase
+      .from("daily_activity")
+      .select("date, steps, distance_km, calories, active_minutes")
+      .eq("user_id", userId)
+      .gte("date", sinceISO)
+      .order("date");
+    return data ?? [];
+  });
+
