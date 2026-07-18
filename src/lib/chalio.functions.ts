@@ -67,17 +67,13 @@ async function recomputeMissionProgress(supabase: any, userId: string) {
     await supabase.from("user_missions").update(updates).eq("id", um.id);
 
     if (nowCompleted && !wasCompleted && !um.claimed) {
-      // auto-award coins + badge
-      await supabase.from("coin_transactions").insert({
-        user_id: userId,
-        amount: m.reward_coins,
-        reason: `mission:${m.id}`,
-        metadata: { title: m.title },
+      // auto-award coins (transaction + balance) atomically via RPC
+      await supabase.rpc("award_coins", {
+        _user: userId,
+        _amount: m.reward_coins,
+        _reason: `mission:${m.id}`,
+        _metadata: { title: m.title },
       });
-      
-      // increment coins on profile
-      const { data: p } = await supabase.from("profiles").select("coins").eq("id", userId).single();
-      await supabase.from("profiles").update({ coins: (p?.coins ?? 0) + m.reward_coins }).eq("id", userId);
       await supabase.from("badges").insert({
         user_id: userId,
         mission_id: m.id,

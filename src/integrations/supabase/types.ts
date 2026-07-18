@@ -400,6 +400,15 @@ export type Database = {
       }
     }
     Functions: {
+      award_coins: {
+        Args: {
+          _amount: number
+          _metadata?: Json
+          _reason: string
+          _user: string
+        }
+        Returns: number
+      }
       get_city_activity: {
         Args: { since_date: string; target_city: string }
         Returns: {
