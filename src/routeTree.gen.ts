@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PromoteRouteImport } from './routes/promote'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PermissionsRouteImport } from './routes/permissions'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ConnectFitRouteImport } from './routes/connect-fit'
 import { Route as AppRouteImport } from './routes/_app'
@@ -30,6 +31,11 @@ const PromoteRoute = PromoteRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PermissionsRoute = PermissionsRouteImport.update({
+  id: '/permissions',
+  path: '/permissions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/connect-fit': typeof ConnectFitRoute
   '/login': typeof LoginRoute
+  '/permissions': typeof PermissionsRoute
   '/profile': typeof ProfileRoute
   '/promote': typeof PromoteRoute
   '/home': typeof AppHomeRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/connect-fit': typeof ConnectFitRoute
   '/login': typeof LoginRoute
+  '/permissions': typeof PermissionsRoute
   '/profile': typeof ProfileRoute
   '/promote': typeof PromoteRoute
   '/home': typeof AppHomeRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/connect-fit': typeof ConnectFitRoute
   '/login': typeof LoginRoute
+  '/permissions': typeof PermissionsRoute
   '/profile': typeof ProfileRoute
   '/promote': typeof PromoteRoute
   '/_app/home': typeof AppHomeRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/'
     | '/connect-fit'
     | '/login'
+    | '/permissions'
     | '/profile'
     | '/promote'
     | '/home'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/'
     | '/connect-fit'
     | '/login'
+    | '/permissions'
     | '/profile'
     | '/promote'
     | '/home'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/connect-fit'
     | '/login'
+    | '/permissions'
     | '/profile'
     | '/promote'
     | '/_app/home'
@@ -169,6 +181,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   ConnectFitRoute: typeof ConnectFitRoute
   LoginRoute: typeof LoginRoute
+  PermissionsRoute: typeof PermissionsRoute
   ProfileRoute: typeof ProfileRoute
   PromoteRoute: typeof PromoteRoute
 }
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/permissions': {
+      id: '/permissions'
+      path: '/permissions'
+      fullPath: '/permissions'
+      preLoaderRoute: typeof PermissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -297,6 +317,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   ConnectFitRoute: ConnectFitRoute,
   LoginRoute: LoginRoute,
+  PermissionsRoute: PermissionsRoute,
   ProfileRoute: ProfileRoute,
   PromoteRoute: PromoteRoute,
 }
