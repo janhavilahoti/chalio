@@ -55,7 +55,10 @@ export type Database = {
           contact_info: string
           created_at: string
           id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
           reward_offer_description: string
+          status: string
           target_mission_type: string
           user_id: string
         }
@@ -64,7 +67,10 @@ export type Database = {
           contact_info: string
           created_at?: string
           id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
           reward_offer_description: string
+          status?: string
           target_mission_type: string
           user_id: string
         }
@@ -73,7 +79,10 @@ export type Database = {
           contact_info?: string
           created_at?: string
           id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
           reward_offer_description?: string
+          status?: string
           target_mission_type?: string
           user_id?: string
         }
@@ -192,6 +201,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          admin_note: string | null
           area: string | null
           avatar_url: string | null
           city: string | null
@@ -200,14 +210,19 @@ export type Database = {
           current_streak: number
           daily_goal: number
           fit_connected: boolean
+          flag_reason: string | null
           id: string
+          is_admin: boolean
+          is_flagged: boolean
           last_login_date: string | null
+          leaderboard_excluded: boolean
           longest_streak: number
           name: string | null
           previous_rank: number | null
           updated_at: string
         }
         Insert: {
+          admin_note?: string | null
           area?: string | null
           avatar_url?: string | null
           city?: string | null
@@ -216,14 +231,19 @@ export type Database = {
           current_streak?: number
           daily_goal?: number
           fit_connected?: boolean
+          flag_reason?: string | null
           id: string
+          is_admin?: boolean
+          is_flagged?: boolean
           last_login_date?: string | null
+          leaderboard_excluded?: boolean
           longest_streak?: number
           name?: string | null
           previous_rank?: number | null
           updated_at?: string
         }
         Update: {
+          admin_note?: string | null
           area?: string | null
           avatar_url?: string | null
           city?: string | null
@@ -232,8 +252,12 @@ export type Database = {
           current_streak?: number
           daily_goal?: number
           fit_connected?: boolean
+          flag_reason?: string | null
           id?: string
+          is_admin?: boolean
+          is_flagged?: boolean
           last_login_date?: string | null
+          leaderboard_excluded?: boolean
           longest_streak?: number
           name?: string | null
           previous_rank?: number | null
@@ -244,27 +268,39 @@ export type Database = {
       reward_items: {
         Row: {
           brand: string
+          category: string | null
           coin_cost: number
           created_at: string
+          description: string | null
           id: string
+          image_url: string | null
           is_active: boolean
           label: string
+          redeemed_count: number
         }
         Insert: {
           brand: string
+          category?: string | null
           coin_cost: number
           created_at?: string
+          description?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           label: string
+          redeemed_count?: number
         }
         Update: {
           brand?: string
+          category?: string | null
           coin_cost?: number
           created_at?: string
+          description?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           label?: string
+          redeemed_count?: number
         }
         Relationships: []
       }
@@ -329,10 +365,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_profiles: {
+        Row: {
+          area: string | null
+          avatar_url: string | null
+          city: string | null
+          coins: number | null
+          current_streak: number | null
+          id: string | null
+          longest_streak: number | null
+          name: string | null
+        }
+        Insert: {
+          area?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          coins?: number | null
+          current_streak?: number | null
+          id?: string | null
+          longest_streak?: number | null
+          name?: string | null
+        }
+        Update: {
+          area?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          coins?: number | null
+          current_streak?: number | null
+          id?: string | null
+          longest_streak?: number | null
+          name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { uid: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
