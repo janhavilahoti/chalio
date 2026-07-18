@@ -19,14 +19,29 @@ export function NativeAuthListener() {
       try {
         const { App } = await import("@capacitor/app");
         const handle = await App.addListener("appUrlOpen", async ({ url }) => {
+          console.log("[native-auth] appUrlOpen", url);
           if (!url || !url.startsWith("chalio://")) return;
           const ok = await handleNativeAuthUrl(url);
+          console.log("[native-auth] handleNativeAuthUrl", { ok });
           if (!ok) return;
           const { data } = await supabase.auth.getSession();
           if (!data.session) return;
           // On native, ignore profiles.fit_connected — that may have been set
           // by a prior web-only session. Only the OS-level check is trusted.
-          const connected = await checkHealthAuthorized();
+          // Guard with a timeout so a hanging plugin can't strand the user.
+          const connected = await Promise.race<boolean>([
+            checkHealthAuthorized().catch((e) => {
+              console.warn("[native-auth] checkHealthAuthorized threw", e);
+              return false;
+            }),
+            new Promise<boolean>((resolve) =>
+              setTimeout(() => {
+                console.warn("[native-auth] checkHealthAuthorized timed out (3s)");
+                resolve(false);
+              }, 3000),
+            ),
+          ]);
+          console.log("[native-auth] routing", { connected });
           navigate({ to: connected ? "/home" : "/connect-fit", replace: true });
         });
         cleanup = () => handle.remove();

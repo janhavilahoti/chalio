@@ -13,21 +13,46 @@ function SplashScreen() {
 
   useEffect(() => {
     const t = setTimeout(async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
+      try {
+        console.log("[splash] checking session");
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          console.log("[splash] no session -> /login");
+          navigate({ to: "/login", replace: true });
+          return;
+        }
+        console.log("[splash] session found, loading profile");
         const { data: profile } = await supabase
           .from("profiles")
           .select("fit_connected")
           .eq("id", data.session.user.id)
           .maybeSingle();
-        // On native, always verify the OS-level authorization independently
-        // of the DB flag — the flag may have been set by a prior web session.
-        const connected = isHealthPlatform()
-          ? await checkHealthAuthorized()
-          : !!profile?.fit_connected;
+
+        let connected: boolean;
+        if (isHealthPlatform()) {
+          console.log("[splash] native — checking OS-level health auth");
+          // Timeout guard: if the plugin hangs or throws, fall back to the DB
+          // flag so the user is never stuck on splash.
+          connected = await Promise.race<boolean>([
+            checkHealthAuthorized().catch((e) => {
+              console.warn("[splash] checkHealthAuthorized threw", e);
+              return !!profile?.fit_connected;
+            }),
+            new Promise<boolean>((resolve) =>
+              setTimeout(() => {
+                console.warn("[splash] checkHealthAuthorized timed out (3s), falling back to profile flag");
+                resolve(!!profile?.fit_connected);
+              }, 3000),
+            ),
+          ]);
+        } else {
+          connected = !!profile?.fit_connected;
+        }
+        console.log("[splash] routing", { connected });
         navigate({ to: connected ? "/home" : "/connect-fit", replace: true });
-      } else {
-        navigate({ to: "/login", replace: true });
+      } catch (e) {
+        console.error("[splash] routing failed, defaulting to /home", e);
+        navigate({ to: "/home", replace: true });
       }
     }, 1500);
     return () => clearTimeout(t);
