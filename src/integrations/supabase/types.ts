@@ -329,7 +329,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_profiles: {
+        Row: {
+          area: string | null
+          avatar_url: string | null
+          city: string | null
+          coins: number | null
+          current_streak: number | null
+          id: string | null
+          name: string | null
+        }
+        Insert: {
+          area?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          coins?: number | null
+          current_streak?: number | null
+          id?: string | null
+          name?: string | null
+        }
+        Update: {
+          area?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          coins?: number | null
+          current_streak?: number | null
+          id?: string | null
+          name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
