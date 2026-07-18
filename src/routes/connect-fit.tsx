@@ -27,7 +27,7 @@ function ConnectFitScreen() {
     try {
       await mark({});
       toast.success("Activity sync enabled");
-      navigate({ to: "/home", replace: true });
+      navigate({ to: "/permissions", replace: true });
     } catch (e) {
       toast.error("Couldn't enable", { description: e instanceof Error ? e.message : String(e) });
     } finally {
