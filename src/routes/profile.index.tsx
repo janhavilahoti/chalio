@@ -33,7 +33,7 @@ import {
 
 const BADGE_COLORS = ["bg-brand-red", "bg-brand-yellow", "bg-brand-blue", "bg-brand-green"];
 
-export const Route = createFileRoute("/profile")({
+export const Route = createFileRoute("/profile/")({
   head: () => ({ meta: [{ title: "Profile — Chalio" }] }),
   component: ProfileScreen,
 });

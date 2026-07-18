@@ -203,7 +203,11 @@ function WalkScreen() {
       </div>
 
       {/* Bottom card */}
-      <div className="absolute inset-x-0 bottom-0 z-10 rounded-t-3xl bg-white p-5 shadow-[0_-8px_24px_rgba(0,0,0,0.12)]">
+      <div
+        className="absolute inset-x-0 bottom-0 rounded-t-3xl bg-white p-5 shadow-[0_-8px_24px_rgba(0,0,0,0.12)]"
+        style={{ zIndex: 1000, paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
+      >
+
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200" />
 
         {error && (
