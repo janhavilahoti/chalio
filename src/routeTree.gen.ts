@@ -19,6 +19,7 @@ import { Route as ConnectFitRouteImport } from './routes/connect-fit'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WalkIdRouteImport } from './routes/walk.$id'
+import { Route as ProfileEditRouteImport } from './routes/profile.edit'
 import { Route as AppRewardsRouteImport } from './routes/_app.rewards'
 import { Route as AppMissionsRouteImport } from './routes/_app.missions'
 import { Route as AppLeaderboardRouteImport } from './routes/_app.leaderboard'
@@ -75,6 +76,11 @@ const WalkIdRoute = WalkIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => WalkRoute,
 } as any)
+const ProfileEditRoute = ProfileEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ProfileRoute,
+} as any)
 const AppRewardsRoute = AppRewardsRouteImport.update({
   id: '/rewards',
   path: '/rewards',
@@ -112,13 +118,14 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/permissions': typeof PermissionsRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/promote': typeof PromoteRoute
   '/walk': typeof WalkRouteWithChildren
   '/home': typeof AppHomeRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/missions': typeof AppMissionsRouteWithChildren
   '/rewards': typeof AppRewardsRoute
+  '/profile/edit': typeof ProfileEditRoute
   '/walk/$id': typeof WalkIdRoute
   '/missions/$id': typeof AppMissionsIdRoute
   '/missions/': typeof AppMissionsIndexRoute
@@ -129,12 +136,13 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/permissions': typeof PermissionsRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/promote': typeof PromoteRoute
   '/walk': typeof WalkRouteWithChildren
   '/home': typeof AppHomeRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/rewards': typeof AppRewardsRoute
+  '/profile/edit': typeof ProfileEditRoute
   '/walk/$id': typeof WalkIdRoute
   '/missions/$id': typeof AppMissionsIdRoute
   '/missions': typeof AppMissionsIndexRoute
@@ -147,13 +155,14 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/permissions': typeof PermissionsRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/promote': typeof PromoteRoute
   '/walk': typeof WalkRouteWithChildren
   '/_app/home': typeof AppHomeRoute
   '/_app/leaderboard': typeof AppLeaderboardRoute
   '/_app/missions': typeof AppMissionsRouteWithChildren
   '/_app/rewards': typeof AppRewardsRoute
+  '/profile/edit': typeof ProfileEditRoute
   '/walk/$id': typeof WalkIdRoute
   '/_app/missions/$id': typeof AppMissionsIdRoute
   '/_app/missions/': typeof AppMissionsIndexRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/missions'
     | '/rewards'
+    | '/profile/edit'
     | '/walk/$id'
     | '/missions/$id'
     | '/missions/'
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/leaderboard'
     | '/rewards'
+    | '/profile/edit'
     | '/walk/$id'
     | '/missions/$id'
     | '/missions'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/_app/leaderboard'
     | '/_app/missions'
     | '/_app/rewards'
+    | '/profile/edit'
     | '/walk/$id'
     | '/_app/missions/$id'
     | '/_app/missions/'
@@ -219,7 +231,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PermissionsRoute: typeof PermissionsRoute
   PrivacyRoute: typeof PrivacyRoute
-  ProfileRoute: typeof ProfileRoute
+  ProfileRoute: typeof ProfileRouteWithChildren
   PromoteRoute: typeof PromoteRoute
   WalkRoute: typeof WalkRouteWithChildren
 }
@@ -296,6 +308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WalkIdRouteImport
       parentRoute: typeof WalkRoute
     }
+    '/profile/edit': {
+      id: '/profile/edit'
+      path: '/edit'
+      fullPath: '/profile/edit'
+      preLoaderRoute: typeof ProfileEditRouteImport
+      parentRoute: typeof ProfileRoute
+    }
     '/_app/rewards': {
       id: '/_app/rewards'
       path: '/rewards'
@@ -371,6 +390,17 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface ProfileRouteChildren {
+  ProfileEditRoute: typeof ProfileEditRoute
+}
+
+const ProfileRouteChildren: ProfileRouteChildren = {
+  ProfileEditRoute: ProfileEditRoute,
+}
+
+const ProfileRouteWithChildren =
+  ProfileRoute._addFileChildren(ProfileRouteChildren)
+
 interface WalkRouteChildren {
   WalkIdRoute: typeof WalkIdRoute
 }
@@ -388,7 +418,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PermissionsRoute: PermissionsRoute,
   PrivacyRoute: PrivacyRoute,
-  ProfileRoute: ProfileRoute,
+  ProfileRoute: ProfileRouteWithChildren,
   PromoteRoute: PromoteRoute,
   WalkRoute: WalkRouteWithChildren,
 }
